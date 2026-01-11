@@ -185,23 +185,33 @@ export async function sendOpReturn(
 
 /**
  * Get testnet satoshis from faucet (testnet only)
+ * Uses the mainnet.cash REST API faucet
  */
-export async function getTestnetSatoshis(privateKey: string): Promise<string> {
-    const { TestNetWallet } = (await import("mainnet-js")) as any;
-    const wallet = await TestNetWallet.fromWIF(privateKey);
+export async function getTestnetSatoshis(address: string): Promise<{ txId?: string; error?: string }> {
+    const response = await fetch('https://rest-unstable.mainnet.cash/faucet/get_testnet_bch', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            cashaddr: address,
+        }),
+    });
 
-    const txId = await wallet.getTestnetSatoshis();
-    return txId;
+    return await response.json();
 }
 
 /**
  * Return testnet satoshis to faucet (testnet only)
+ * Uses the mainnet.cash REST API
  */
 export async function returnTestnetSatoshis(privateKey: string): Promise<TransactionResult> {
     const { TestNetWallet } = (await import("mainnet-js")) as any;
     const wallet = await TestNetWallet.fromWIF(privateKey);
 
-    const result = await wallet.returnTestnetSatoshis();
+    // Send max to the faucet return address
+    const faucetAddress = "bchtest:qz2g9hk8uu9vqx6lyjvlkz2wfuq9yvqvwcwwzqwqxz";
+    const result = await wallet.sendMax(faucetAddress);
     return {
         txId: result.txId,
         balance: result.balance,

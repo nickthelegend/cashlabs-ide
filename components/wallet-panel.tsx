@@ -54,14 +54,34 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
     setIsLoading(true)
     setError(null)
     try {
-      const { TestNetWallet } = (await import("mainnet-js")) as any
-      const w = await TestNetWallet.fromWIF(wallet.privateKey)
-      const txId = await w.getTestnetSatoshis()
-      toast({
-        title: "Faucet Success",
-        description: `Successfully requested test BCH. TxID: ${txId}`,
+      // Use the mainnet.cash REST API faucet
+      const response = await fetch('https://rest-unstable.mainnet.cash/faucet/get_testnet_bch', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          cashaddr: wallet.address,
+        }),
       })
-      setTimeout(refreshData, 2000)
+
+      const data = await response.json()
+
+      if (data.txId) {
+        toast({
+          title: "Faucet Success",
+          description: `Successfully requested test BCH. TxID: ${data.txId}`,
+        })
+        setTimeout(refreshData, 3000)
+      } else if (data.error) {
+        throw new Error(data.error)
+      } else {
+        toast({
+          title: "Faucet Request Sent",
+          description: "Check your balance in a few seconds.",
+        })
+        setTimeout(refreshData, 3000)
+      }
     } catch (error) {
       console.error("Faucet error:", error)
       setError("Faucet error: " + (error instanceof Error ? error.message : String(error)))

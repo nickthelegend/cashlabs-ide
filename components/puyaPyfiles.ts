@@ -31,13 +31,19 @@ async function main() {
   console.log("  Satoshis:", balance.sat);
   console.log("  USD:", balance.usd);
 
-  // Request testnet coins from faucet
-  console.log("\\nRequesting testnet coins from faucet...");
+  // Request testnet coins from faucet using REST API
+  console.log("\\\\nRequesting testnet coins from faucet...");
   try {
-    const txId = await wallet.getTestnetSatoshis();
-    console.log("  Faucet TxID:", txId);
+    const faucetResponse = await fetch('https://rest-unstable.mainnet.cash/faucet/get_testnet_bch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cashaddr: wallet.cashaddr }),
+    });
+    const faucetData = await faucetResponse.json();
+    console.log("  Faucet response:", faucetData);
     
-    // Wait for new balance
+    // Wait a bit then check balance
+    await new Promise(r => setTimeout(r, 3000));
     const newBalance = await wallet.getBalance();
     console.log("  New Balance:", newBalance.sat, "satoshis");
   } catch (error) {
