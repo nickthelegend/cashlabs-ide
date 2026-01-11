@@ -1,0 +1,546 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.5rem;
+
+    /* Custom Theme Variables */
+    --background-color: #1e1e1e;
+    --text-color: #ffffff;
+    --sidebar-color: #252526;
+    --border-color: #2d2d30;
+    --button-color: #0e639c;
+    --button-hover-color: #1177bb;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Monaco Editor Styles */
+.monaco-editor {
+  --vscode-editor-background: #1e1e1e !important;
+}
+
+/* Custom Terminal Styles */
+.terminal-container {
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+}
+
+/* Scrollbar styling for terminal */
+.terminal-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.terminal-container::-webkit-scrollbar-track {
+  background: #1e1e1e;
+}
+
+.terminal-container::-webkit-scrollbar-thumb {
+  background: #3e3e42;
+  border-radius: 4px;
+}
+
+.terminal-container::-webkit-scrollbar-thumb:hover {
+  background: #4e4e52;
+}
+
+/* Syntax Highlighting Styles for AI Chat */
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border-radius: 4px;
+}
+
+/* Ensure code blocks have proper styling */
+.ai-chat-prose pre {
+  background-color: #1e1e1e !important;
+  border: 1px solid #3e3e42 !important;
+  border-radius: 6px !important;
+  padding: 1em !important;
+  overflow-x: auto !important;
+  margin: 1em 0 !important;
+  position: relative !important;
+}
+
+.ai-chat-prose pre code {
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  font-size: 0.9em !important;
+  line-height: 1.4 !important;
+  color: #d4d4d4 !important;
+}
+
+/* Force syntax highlighting colors */
+.hljs-keyword {
+  color: #569cd6 !important;
+}
+
+.hljs-string {
+  color: #ce9178 !important;
+}
+
+.hljs-comment {
+  color: #6a9955 !important;
+  font-style: italic !important;
+}
+
+.hljs-number {
+  color: #b5cea8 !important;
+}
+
+.hljs-function {
+  color: #dcdcaa !important;
+}
+
+.hljs-class {
+  color: #4ec9b0 !important;
+}
+
+.hljs-variable {
+  color: #9cdcfe !important;
+}
+
+.hljs-operator {
+  color: #d4d4d4 !important;
+}
+
+.hljs-punctuation {
+  color: #d4d4d4 !important;
+}
+
+.hljs-property {
+  color: #9cdcfe !important;
+}
+
+.hljs-title {
+  color: #dcdcaa !important;
+}
+
+.hljs-params {
+  color: #9cdcfe !important;
+}
+
+.hljs-built_in {
+  color: #4ec9b0 !important;
+}
+
+.hljs-literal {
+  color: #569cd6 !important;
+}
+
+.hljs-type {
+  color: #4ec9b0 !important;
+}
+
+.hljs-attr {
+  color: #9cdcfe !important;
+}
+
+.hljs-tag {
+  color: #569cd6 !important;
+}
+
+.hljs-name {
+  color: #569cd6 !important;
+}
+
+.hljs-selector {
+  color: #d7ba7d !important;
+}
+
+.hljs-selector-id {
+  color: #d7ba7d !important;
+}
+
+.hljs-selector-class {
+  color: #d7ba7d !important;
+}
+
+.hljs-selector-attr {
+  color: #d7ba7d !important;
+}
+
+.hljs-selector-pseudo {
+  color: #d7ba7d !important;
+}
+
+.hljs-addition {
+  background-color: #144212 !important;
+  color: #6a9955 !important;
+}
+
+.hljs-deletion {
+  background-color: #600 !important;
+  color: #ce9178 !important;
+}
+
+.hljs-meta {
+  color: #9cdcfe !important;
+}
+
+.hljs-section {
+  color: #dcdcaa !important;
+}
+
+.hljs-emphasis {
+  font-style: italic !important;
+}
+
+.hljs-strong {
+  font-weight: bold !important;
+}
+
+/* AI Chat Markdown Prose Styles */
+.ai-chat-prose {
+  color: #d4d4d4;
+  line-height: 1.6;
+}
+
+.ai-chat-prose h1,
+.ai-chat-prose h2,
+.ai-chat-prose h3,
+.ai-chat-prose h4,
+.ai-chat-prose h5,
+.ai-chat-prose h6 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.ai-chat-prose h1 {
+  font-size: 1.5em;
+  color: #4ec9b0;
+}
+
+.ai-chat-prose h2 {
+  font-size: 1.3em;
+  color: #4ec9b0;
+}
+
+.ai-chat-prose h3 {
+  font-size: 1.1em;
+  color: #4ec9b0;
+}
+
+.ai-chat-prose p {
+  margin-bottom: 1em;
+}
+
+.ai-chat-prose ul,
+.ai-chat-prose ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.ai-chat-prose li {
+  margin-bottom: 0.25em;
+}
+
+.ai-chat-prose blockquote {
+  border-left: 4px solid #4ec9b0;
+  padding-left: 1em;
+  margin: 1em 0;
+  font-style: italic;
+  color: #a0a0a0;
+}
+
+.ai-chat-prose code {
+  background-color: #2d2d30;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.ai-chat-prose pre {
+  background-color: #1e1e1e;
+  border: 1px solid #3e3e42;
+  border-radius: 6px;
+  padding: 1em;
+  overflow-x: auto;
+  margin: 1em 0;
+  position: relative;
+}
+
+.ai-chat-prose pre:hover {
+  border-color: #4ec9b0;
+  box-shadow: 0 0 0 1px #4ec9b0;
+}
+
+.ai-chat-prose pre code {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* Code block language badge */
+.code-language-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #2d2d30;
+  color: #a0a0a0;
+  padding: 0.25em 0.5em;
+  font-size: 0.75em;
+  border-radius: 0 6px 0 6px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+}
+
+/* Copy button styling */
+.copy-button {
+  position: absolute;
+  top: 0;
+  right: 4rem;
+  background: #2d2d30;
+  color: #a0a0a0;
+  padding: 0.25em 0.5em;
+  font-size: 0.75em;
+  border-radius: 0 6px 0 6px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+  z-index: 10;
+}
+
+.copy-button:hover {
+  background: #4ec9b0;
+  color: #1e1e1e;
+}
+
+.code-block-container:hover .copy-button {
+  opacity: 1;
+}
+
+/* Ensure the copy button is visible on hover */
+.code-block-container:hover .copy-button:hover {
+  background: #4ec9b0;
+  color: #1e1e1e;
+}
+
+.ai-chat-prose a {
+  color: #4ec9b0;
+  text-decoration: underline;
+}
+
+.ai-chat-prose a:hover {
+  color: #6a9955;
+}
+
+.ai-chat-prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.ai-chat-prose th,
+.ai-chat-prose td {
+  border: 1px solid #3e3e42;
+  padding: 0.75em;
+  text-align: left;
+}
+
+.ai-chat-prose th {
+  background-color: #2d2d30;
+  font-weight: 600;
+  color: #4ec9b0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.9em;
+}
+
+.ai-chat-prose td {
+  background-color: #1e1e1e;
+  transition: background-color 0.2s ease;
+}
+
+.ai-chat-prose tr:hover td {
+  background-color: #2d2d30;
+}
+
+.ai-chat-prose hr {
+  border: none;
+  border-top: 2px solid #3e3e42;
+  margin: 2em 0;
+  opacity: 0.6;
+}
+
+.ai-chat-prose img {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+}
+
+.ai-chat-prose img:hover {
+  transform: scale(1.02);
+}
+
+/* Inline code improvements */
+.ai-chat-prose code:not(pre code) {
+  background-color: #2d2d30;
+  color: #4ec9b0;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  font-size: 0.9em;
+  border: 1px solid #3e3e42;
+}
+
+/* Link improvements */
+.ai-chat-prose a {
+  color: #4ec9b0;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.ai-chat-prose a:hover {
+  color: #6a9955;
+  border-bottom-color: #6a9955;
+}
+
+/* List improvements */
+.ai-chat-prose ul,
+.ai-chat-prose ol {
+  margin-bottom: 1.5em;
+  padding-left: 1.5em;
+}
+
+.ai-chat-prose li {
+  margin-bottom: 0.5em;
+  line-height: 1.6;
+}
+
+.ai-chat-prose li::marker {
+  color: #4ec9b0;
+}
+
+/* Blockquote improvements */
+.ai-chat-prose blockquote {
+  border-left: 4px solid #4ec9b0;
+  padding: 1em 1.5em;
+  margin: 1.5em 0;
+  font-style: italic;
+  color: #a0a0a0;
+  background-color: #2d2d30;
+  border-radius: 0 6px 6px 0;
+  position: relative;
+}
+
+.ai-chat-prose blockquote::before {
+  content: '"';
+  font-size: 3em;
+  color: #4ec9b0;
+  position: absolute;
+  left: 0.5em;
+  top: 0.2em;
+  opacity: 0.3;
+  font-family: serif;
+}
+
+/* Markdown content styling */
+.markdown-content {
+  color: #d4d4d4;
+  line-height: 1.6;
+}
+
+.markdown-content pre {
+  background-color: #1e1e1e !important;
+  border: 1px solid #3e3e42 !important;
+  border-radius: 6px !important;
+  padding: 1em !important;
+  overflow-x: auto !important;
+  margin: 1em 0 !important;
+  position: relative !important;
+}
+
+.markdown-content pre code {
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  font-size: 0.9em !important;
+  line-height: 1.4 !important;
+  color: #d4d4d4 !important;
+}
+
+/* Ensure syntax highlighting works */
+.markdown-content .hljs {
+  background: #1e1e1e !important;
+  color: #d4d4d4 !important;
+}
+
+.markdown-content code:not(pre code) {
+  background-color: #2d2d30 !important;
+  color: #4ec9b0 !important;
+  padding: 0.2em 0.4em !important;
+  border-radius: 4px !important;
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+  font-size: 0.9em !important;
+  border: 1px solid #3e3e42 !important;
+}
