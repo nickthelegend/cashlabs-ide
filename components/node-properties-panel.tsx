@@ -18,7 +18,7 @@ interface NodePropertiesPanelProps {
 }
 
 export function NodePropertiesPanel({ selectedNode, onClose, onUpdateNode }: NodePropertiesPanelProps) {
-  const [config, setConfig] = useState(selectedNode?.data?.config || {})
+  const [config, setConfig] = useState<any>(selectedNode?.data?.config || {})
 
   if (!selectedNode) return null
 
@@ -31,19 +31,20 @@ export function NodePropertiesPanel({ selectedNode, onClose, onUpdateNode }: Nod
   }
 
   const renderConfigFields = () => {
-    switch (selectedNode.data.nodeType) {
+    switch ((selectedNode.data as any).nodeType) { // Cast node.data to any for nodeType
       case "account":
         return (
           <div className="space-y-4">
             <div>
               <Label htmlFor="address" className="text-white">
+                {/* Account from node: {(selectedNode.data as any).label} */}
                 Account Address
               </Label>
               <Input
                 id="address"
                 value={config.address || ""}
                 onChange={(e) => setConfig({ ...config, address: e.target.value })}
-                placeholder="Enter Algorand address"
+                placeholder="Enter Bitcoin Cash address"
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
@@ -55,7 +56,7 @@ export function NodePropertiesPanel({ selectedNode, onClose, onUpdateNode }: Nod
                 id="mnemonic"
                 value={config.mnemonic || ""}
                 onChange={(e) => setConfig({ ...config, mnemonic: e.target.value })}
-                placeholder="Enter 25-word mnemonic phrase"
+                placeholder="Enter mnemonic phrase"
                 className="bg-gray-800 border-gray-600 text-white"
               />
             </div>
@@ -67,7 +68,7 @@ export function NodePropertiesPanel({ selectedNode, onClose, onUpdateNode }: Nod
           <div className="space-y-4">
             <div>
               <Label htmlFor="amount" className="text-white">
-                Amount (ALGO)
+                Amount (BCH)
               </Label>
               <Input
                 id="amount"
@@ -376,7 +377,7 @@ export function NodePropertiesPanel({ selectedNode, onClose, onUpdateNode }: Nod
             <div>
               <Label className="text-white font-semibold">Node Type</Label>
               <Badge variant="secondary" className="mt-1">
-                {selectedNode.data.label}
+                {(selectedNode.data as any).label}
               </Badge>
             </div>
             <div>

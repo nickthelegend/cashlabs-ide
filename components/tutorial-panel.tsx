@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 const tutorials = [
   {
     id: 1,
-    title: "Hello Algorand",
+    title: "Hello Bitcoin Cash",
     description: "Hello world program with PyTeal/Python.",
     level: "BEGINNER",
     framework: "PyTeal",
@@ -18,7 +18,7 @@ const tutorials = [
   {
     id: 2,
     title: "Hello Smart Contract",
-    description: "Hello world program with Algorand Smart Contracts.",
+    description: "Hello world program with Bitcoin Cash Smart Contracts.",
     level: "BEGINNER",
     framework: "Native",
     language: "Python",
@@ -27,7 +27,7 @@ const tutorials = [
   {
     id: 3,
     title: "Asset Creation",
-    description: "Learn to create and manage Algorand Standard Assets.",
+    description: "Learn to create and manage Bitcoin Cash Tokens.",
     level: "INTERMEDIATE",
     framework: "PyTeal",
     language: "Python",
@@ -78,9 +78,8 @@ export function TutorialPanel() {
             {levels.map((level) => (
               <div key={level} className="flex items-center gap-2">
                 <div
-                  className={`w-3 h-3 rounded-full ${
-                    level === "BEGINNER" ? "bg-green-500" : level === "INTERMEDIATE" ? "bg-yellow-500" : "bg-red-500"
-                  }`}
+                  className={`w-3 h-3 rounded-full ${level === "BEGINNER" ? "bg-green-500" : level === "INTERMEDIATE" ? "bg-yellow-500" : "bg-red-500"
+                    }`}
                 ></div>
                 <button
                   onClick={() => setSelectedLevel(selectedLevel === level ? null : level)}
@@ -100,9 +99,8 @@ export function TutorialPanel() {
             {frameworks.map((framework) => (
               <div key={framework} className="flex items-center gap-2">
                 <div
-                  className={`w-3 h-3 rounded-full ${
-                    framework === "PyTeal" ? "bg-blue-500" : framework === "Native" ? "bg-purple-500" : "bg-orange-500"
-                  }`}
+                  className={`w-3 h-3 rounded-full ${framework === "PyTeal" ? "bg-blue-500" : framework === "Native" ? "bg-purple-500" : "bg-orange-500"
+                    }`}
                 ></div>
                 <button
                   onClick={() => setSelectedFramework(selectedFramework === framework ? null : framework)}
@@ -122,13 +120,12 @@ export function TutorialPanel() {
             {languages.map((language) => (
               <div key={language} className="flex items-center gap-2">
                 <div
-                  className={`w-3 h-3 rounded-full ${
-                    language === "Python"
+                  className={`w-3 h-3 rounded-full ${language === "Python"
                       ? "bg-yellow-500"
                       : language === "JavaScript"
                         ? "bg-yellow-400"
                         : "bg-cyan-500"
-                  }`}
+                    }`}
                 ></div>
                 <button
                   onClick={() => setSelectedLanguage(selectedLanguage === language ? null : language)}
@@ -175,13 +172,12 @@ export function TutorialPanel() {
                 <div className="flex flex-wrap gap-2">
                   <Badge
                     variant="secondary"
-                    className={`text-xs ${
-                      tutorial.level === "BEGINNER"
+                    className={`text-xs ${tutorial.level === "BEGINNER"
                         ? "bg-green-500/20 text-green-400"
                         : tutorial.level === "INTERMEDIATE"
                           ? "bg-yellow-500/20 text-yellow-400"
                           : "bg-red-500/20 text-red-400"
-                    }`}
+                      }`}
                   >
                     {tutorial.level}
                   </Badge>

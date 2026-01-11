@@ -5,19 +5,19 @@ import type React from "react"
 import { useEffect, useRef, useState, useCallback } from "react"
 import { Plus, X } from "lucide-react"
 
-const algorandCommands = {
+const bchCommands = {
   help: "Print help message",
   clear: "Clear terminal",
-  algorand: "Commands for interacting with Algorand",
-  compile: "Compile your PyTeal contract",
+  bch: "Commands for interacting with Bitcoin Cash",
+  compile: "Compile your smart contract",
   deploy: "Deploy your contract to testnet",
   test: "Run test(s)",
   build: "Build your program",
-  connect: "Toggle connection to Algorand Wallet",
+  connect: "Toggle connection to Bitcoin Cash Wallet",
   account: "Show account information",
   balance: "Check account balance",
-  asset: "Commands for interacting with Algorand Assets",
-  app: "Commands for interacting with Algorand Applications",
+  token: "Commands for interacting with BCH tokens",
+  app: "Commands for interacting with Bitcoin Cash smart contracts",
   node: "Node status and information",
   "!!": "Run the last command",
 }
@@ -44,7 +44,7 @@ export function Terminal() {
       id: "1",
       name: "Terminal 1",
       lines: [
-        { type: "success", content: "$ Welcome to Algocraft IDE Terminal" },
+        { type: "success", content: "$ Welcome to CashLabs Terminal" },
         { type: "output", content: 'Type "help" to see available commands' },
       ],
       currentInput: "",
@@ -83,9 +83,9 @@ export function Terminal() {
       prev.map((terminal) =>
         terminal.id === terminalId
           ? {
-              ...terminal,
-              lines: [...terminal.lines, { type, content, timestamp: new Date() }],
-            }
+            ...terminal,
+            lines: [...terminal.lines, { type, content, timestamp: new Date() }],
+          }
           : terminal,
       ),
     )
@@ -119,7 +119,7 @@ export function Terminal() {
     switch (cmd) {
       case "help":
         addLine(terminalId, "output", "Available Commands:")
-        Object.entries(algorandCommands).forEach(([cmd, desc]) => {
+        Object.entries(bchCommands).forEach(([cmd, desc]) => {
           addLine(terminalId, "output", `  ${cmd.padEnd(15)} ${desc}`)
         })
         break
@@ -133,33 +133,33 @@ export function Terminal() {
         })
         break
 
-      case "algorand":
+      case "bch":
         if (args.length === 0) {
-          addLine(terminalId, "output", "Algorand CLI - Available subcommands:")
+          addLine(terminalId, "output", "Bitcoin Cash CLI - Available subcommands:")
           addLine(terminalId, "output", "  status      Show network status")
-          addLine(terminalId, "output", "  version     Show Algorand version")
+          addLine(terminalId, "output", "  version     Show Bitcoin Cash version")
           addLine(terminalId, "output", "  network     Show current network")
         } else {
           switch (args[0]) {
             case "status":
-              addLine(terminalId, "success", "✓ Connected to Algorand TestNet")
+              addLine(terminalId, "success", "✓ Connected to Bitcoin Cash TestNet")
               addLine(terminalId, "output", "  Block: 12345678")
               addLine(terminalId, "output", "  Round Time: 4.5s")
               break
             case "version":
-              addLine(terminalId, "output", "Algorand CLI v3.15.0")
+              addLine(terminalId, "output", "Bitcoin Cash CLI v1.0.0")
               break
             case "network":
               addLine(terminalId, "output", "Current Network: TestNet")
               break
             default:
-              addLine(terminalId, "error", `Unknown algorand command: ${args[0]}`)
+              addLine(terminalId, "error", `Unknown bch command: ${args[0]}`)
           }
         }
         break
 
       case "compile":
-        addLine(terminalId, "output", "Compiling PyTeal contract...")
+        addLine(terminalId, "output", "Compiling smart contract...")
         await new Promise((resolve) => setTimeout(resolve, 1500))
         addLine(terminalId, "success", "✓ Contract compiled successfully")
         addLine(terminalId, "output", "  Approval Program: 1234 bytes")
@@ -188,18 +188,18 @@ export function Terminal() {
 
       case "balance":
         addLine(terminalId, "output", "Account Balance:")
-        addLine(terminalId, "output", "  ALGO: 10.5 ALGO")
-        addLine(terminalId, "output", "  Assets: 2 ASA tokens")
+        addLine(terminalId, "output", "  BCH: 10.5 BCH")
+        addLine(terminalId, "output", "  Tokens: 2 CashTokens")
         break
 
       case "connect":
-        addLine(terminalId, "success", "✓ Connected to Algorand Wallet")
+        addLine(terminalId, "success", "✓ Connected to Bitcoin Cash Wallet")
         break
 
       case "account":
         addLine(terminalId, "output", "Account Information:")
-        addLine(terminalId, "output", "  Address: ALGO7X8K9L2M3N4P5Q6R7S8T9U0V1W2X3Y4Z5A6B7C8D9E0F1G2H3")
-        addLine(terminalId, "output", "  Balance: 10.5 ALGO")
+        addLine(terminalId, "output", "  Address: qp8k9l2m3n4p5q6r7s8t9u0v1w2x3y4z5a6b7c8d9e0f1g2h3")
+        addLine(terminalId, "output", "  Balance: 10.5 BCH")
         addLine(terminalId, "output", "  Status: Online")
         break
 
@@ -281,7 +281,7 @@ export function Terminal() {
       id: newId,
       name: `Terminal ${newId}`,
       lines: [
-        { type: "success", content: "$ Welcome to Algocraft IDE Terminal" },
+        { type: "success", content: "$ Welcome to CashLabs Terminal" },
         { type: "output", content: 'Type "help" to see available commands' },
       ],
       currentInput: "",
@@ -316,11 +316,10 @@ export function Terminal() {
           {terminals.map((terminal) => (
             <div
               key={terminal.id}
-              className={`flex items-center gap-1 px-3 py-1 text-sm cursor-pointer border-r border-[#3e3e42] ${
-                activeTerminalId === terminal.id
-                  ? "bg-[#1e1e1e] text-white"
-                  : "bg-[#2d2d30] text-[#cccccc] hover:bg-[#37373d]"
-              }`}
+              className={`flex items-center gap-1 px-3 py-1 text-sm cursor-pointer border-r border-[#3e3e42] ${activeTerminalId === terminal.id
+                ? "bg-[#1e1e1e] text-white"
+                : "bg-[#2d2d30] text-[#cccccc] hover:bg-[#37373d]"
+                }`}
               onClick={() => setActiveTerminalId(terminal.id)}
             >
               <span
@@ -364,7 +363,7 @@ export function Terminal() {
       {activeTerminal && (
         <div className="flex-1 overflow-hidden">
           <div
-            ref={(el) => (terminalRefs.current[activeTerminal.id] = el)}
+            ref={(el) => { terminalRefs.current[activeTerminal.id] = el; }}
             className="h-full overflow-auto p-4 font-mono text-sm"
             onClick={() => inputRefs.current[activeTerminal.id]?.focus()}
           >
@@ -377,7 +376,7 @@ export function Terminal() {
             <div className="flex items-center text-yellow-400">
               <span>$ </span>
               <input
-                ref={(el) => (inputRefs.current[activeTerminal.id] = el)}
+                ref={(el) => { inputRefs.current[activeTerminal.id] = el; }}
                 type="text"
                 value={activeTerminal.currentInput}
                 onChange={(e) => updateTerminal(activeTerminal.id, { currentInput: e.target.value })}

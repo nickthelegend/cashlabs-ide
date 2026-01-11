@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@supabase/supabase-js'
-import AlgorandIDE from '@/components/algorand-ide'
+import CashLabsIDE from '@/components/cashlabs-ide'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,7 +27,7 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
   const searchParams = useSearchParams()
   const projectParam = searchParams.get('project')
   const contractParam = searchParams.get('contract')
-  
+
   const [showDialog, setShowDialog] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(false)
@@ -41,7 +41,7 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
     const getUser = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       setUser(session?.user)
-      
+
       // Skip login - go directly to IDE
       setShowDialog(false)
     }
@@ -51,7 +51,7 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
   useEffect(() => {
     const loadContract = async () => {
       if (!contractParam) return
-      
+
       setLoadingContract(true)
       try {
         const response = await fetch('/api/load-contract', {
@@ -61,7 +61,7 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
           },
           body: JSON.stringify({ encoded: contractParam })
         })
-        
+
         const result = await response.json()
         if (result.success && result.code) {
           setContractCode(result.code)
@@ -77,14 +77,14 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
 
   const createProject = async () => {
     if (!user || !projectName.trim()) return
-    
+
     setLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
 
       let fileStructure = initialFiles
-      
+
       // If contract code is loaded, add it to file structure
       if (contractCode) {
         fileStructure = {
@@ -138,14 +138,14 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
 
   return (
     <>
-      <AlgorandIDE
+      <CashLabsIDE
         initialFiles={initialFiles}
         selectedTemplate={selectedTemplate}
         selectedTemplateName={selectedTemplateName}
-        projectId={projectParam}
+        projectId={projectParam || undefined}
       />
-      
-      <Dialog open={showDialog} onOpenChange={() => {}}>
+
+      <Dialog open={showDialog} onOpenChange={() => { }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{user ? 'Create New Project' : 'Login Required'}</DialogTitle>
@@ -167,7 +167,7 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
                   id="name"
                   value={projectName}
                   onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="My Algorand Project"
+                  placeholder="My Bitcoin Cash Project"
                 />
               </div>
               <div>
@@ -191,8 +191,8 @@ export function ProjectCreator({ initialFiles, selectedTemplate, selectedTemplat
                   </SelectContent>
                 </Select>
               </div>
-              <Button 
-                onClick={createProject} 
+              <Button
+                onClick={createProject}
                 disabled={!projectName.trim() || loading}
                 className="w-full"
               >

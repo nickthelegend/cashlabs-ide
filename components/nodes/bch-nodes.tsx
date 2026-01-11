@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useEffect } from "react"
 
-interface AlgorandNodeProps {
+interface BCHNodeProps {
   data: {
     label: string
     nodeType: string
@@ -14,7 +14,7 @@ interface AlgorandNodeProps {
   selected?: boolean
 }
 
-export function AccountNode({ data, selected }: AlgorandNodeProps) {
+export function AccountNode({ data, selected }: BCHNodeProps) {
   useEffect(() => {
     if (!data.config) {
       data.config = {};
@@ -36,7 +36,7 @@ export function AccountNode({ data, selected }: AlgorandNodeProps) {
       <Card className={`min-w-[180px] bg-blue-600 border-blue-500 ${selected ? "ring-2 ring-blue-400" : ""}`}>
         <CardContent className="p-3">
           <div className="text-white font-semibold text-sm mb-1">ACCOUNT</div>
-          <div className="text-blue-100 text-xs">Algorand Account</div>
+          <div className="text-blue-100 text-xs">Bitcoin Cash Account</div>
           <div className="text-blue-100 text-xs mt-1 overflow-hidden text-ellipsis whitespace-nowrap">
             Mnemonic: {data.config?.mnemonic ? `${data.config.mnemonic.substring(0, 10)}...` : "Not set"}
           </div>
@@ -50,14 +50,14 @@ export function AccountNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function PaymentNode({ data, selected }: AlgorandNodeProps) {
+export function PaymentNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-green-600 border-green-500 ${selected ? "ring-2 ring-green-400" : ""}`}>
         <CardContent className="p-3">
           <div className="text-white font-semibold text-sm mb-1">PAYMENT</div>
-          <div className="text-green-100 text-xs">Send ALGO</div>
-          <div className="text-green-100 text-xs mt-1">Amount: {data.config?.amount || "0"} ALGO</div>
+          <div className="text-green-100 text-xs">Send BCH</div>
+          <div className="text-green-100 text-xs mt-1">Amount: {data.config?.amount || "0"} BCH</div>
         </CardContent>
       </Card>
       <Handle type="target" position={Position.Left} className="w-3 h-3 bg-green-400 border-2 border-white" />
@@ -66,14 +66,14 @@ export function PaymentNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function AssetTransferNode({ data, selected }: AlgorandNodeProps) {
+export function AssetTransferNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-purple-600 border-purple-500 ${selected ? "ring-2 ring-purple-400" : ""}`}>
         <CardContent className="p-3">
           <div className="text-white font-semibold text-sm mb-1">ASSET TRANSFER</div>
-          <div className="text-purple-100 text-xs">Transfer ASA</div>
-          <div className="text-purple-100 text-xs mt-1">Asset ID: {data.config?.assetId || "None"}</div>
+          <div className="text-purple-100 text-xs">Transfer Token</div>
+          <div className="text-purple-100 text-xs mt-1">Token ID: {data.config?.assetId || "None"}</div>
         </CardContent>
       </Card>
       <Handle type="target" position={Position.Left} className="w-3 h-3 bg-purple-400 border-2 border-white" />
@@ -82,7 +82,7 @@ export function AssetTransferNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function ApplicationCallNode({ data, selected }: AlgorandNodeProps) {
+export function ApplicationCallNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-orange-600 border-orange-500 ${selected ? "ring-2 ring-orange-400" : ""}`}>
@@ -98,13 +98,13 @@ export function ApplicationCallNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function AssetCreateNode({ data, selected }: AlgorandNodeProps) {
+export function AssetCreateNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-yellow-600 border-yellow-500 ${selected ? "ring-2 ring-yellow-400" : ""}`}>
         <CardContent className="p-3">
           <div className="text-white font-semibold text-sm mb-1">CREATE ASSET</div>
-          <div className="text-yellow-100 text-xs">Create ASA</div>
+          <div className="text-yellow-100 text-xs">Create Token</div>
           <div className="text-yellow-100 text-xs mt-1">Total: {data.config?.total || "1000"}</div>
         </CardContent>
       </Card>
@@ -114,7 +114,7 @@ export function AssetCreateNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function KeyRegNode({ data, selected }: AlgorandNodeProps) {
+export function KeyRegNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-red-600 border-red-500 ${selected ? "ring-2 ring-red-400" : ""}`}>
@@ -130,14 +130,14 @@ export function KeyRegNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function AssetFreezeNode({ data, selected }: AlgorandNodeProps) {  // Added for flow builder
+export function AssetFreezeNode({ data, selected }: BCHNodeProps) {  // Added for flow builder
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-teal-600 border-teal-500 ${selected ? "ring-2 ring-teal-400" : ""}`}>
         <CardContent className="p-3">
           <div className="text-white font-semibold text-sm mb-1">ASSET FREEZE</div>
-          <div className="text-teal-100 text-xs">Freeze/Unfreeze ASA</div>
-          <div className="text-teal-100 text-xs mt-1">Asset ID: {data.config?.assetId || "None"}</div>
+          <div className="text-teal-100 text-xs">Freeze/Unfreeze Token</div>
+          <div className="text-teal-100 text-xs mt-1">Token ID: {data.config?.assetId || "None"}</div>
         </CardContent>
       </Card>
       <Handle type="target" position={Position.Left} className="w-3 h-3 bg-teal-400 border-2 border-white" />
@@ -146,7 +146,7 @@ export function AssetFreezeNode({ data, selected }: AlgorandNodeProps) {  // Add
   )
 }
 
-export function ConditionNode({ data, selected }: AlgorandNodeProps) {
+export function ConditionNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-cyan-600 border-cyan-500 ${selected ? "ring-2 ring-cyan-400" : ""}`}>
@@ -168,7 +168,7 @@ export function ConditionNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function OutputNode({ data, selected }: AlgorandNodeProps) {
+export function OutputNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-gray-600 border-gray-500 ${selected ? "ring-2 ring-gray-400" : ""}`}>
@@ -183,7 +183,7 @@ export function OutputNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function SignTxnNode({ data, selected }: AlgorandNodeProps) {
+export function SignTxnNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-indigo-600 border-indigo-500 ${selected ? "ring-2 ring-indigo-400" : ""}`}>
@@ -199,7 +199,7 @@ export function SignTxnNode({ data, selected }: AlgorandNodeProps) {
   )
 }
 
-export function ExecuteTxnNode({ data, selected }: AlgorandNodeProps) {
+export function ExecuteTxnNode({ data, selected }: BCHNodeProps) {
   return (
     <div className="relative">
       <Card className={`min-w-[180px] bg-pink-600 border-pink-500 ${selected ? "ring-2 ring-pink-400" : ""}`}>

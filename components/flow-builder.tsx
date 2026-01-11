@@ -28,7 +28,7 @@ import {
   SignTxnNode,
   ExecuteTxnNode,
   AssetFreezeNode,
-} from "./nodes/algorand-nodes"
+} from "./nodes/bch-nodes"
 import { NodePropertiesPanel } from "./node-properties-panel"
 import { Button } from "./ui/button"
 import { type Edge } from "@xyflow/react"

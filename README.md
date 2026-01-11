@@ -1,16 +1,15 @@
-# 🚀 AlgoCraft - Algorand Development Platform
+# 🚀 CashLabs - Bitcoin Cash Development Platform
 
 <div align="center">
 
-![AlgoCraft Banner](https://img.shields.io/badge/AlgoCraft-Algorand%20IDE-00D4AA?style=for-the-badge&logo=algorand)
+![CashLabs Banner](https://img.shields.io/badge/CashLabs-Bitcoin%20Cash%20IDE-00D4AA?style=for-the-badge&logo=bitcoincash)
 
-**A comprehensive web-based development environment for building, testing, and deploying Algorand smart contracts**
+**A comprehensive web-based development environment for building, testing, and deploying Bitcoin Cash smart contracts**
 
-[![xGov Proposal](https://img.shields.io/badge/xGov-Proposal%203262647286-blue?style=flat-square)](https://xgov.algorand.co/proposal/3262647286)
 [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 
-[🌐 Main Site](https://algocraft.fun) • [💻 IDE](https://ide.algocraft.fun) • [🔄 Flow Builder](https://flow.algocraft.fun)
+[🌐 Main Site](https://cashlabs.io) • [💻 IDE](https://ide.cashlabs.io) • [🔄 Flow Builder](https://flow.cashlabs.io)
 
 </div>
 
@@ -28,25 +27,18 @@ Before running this project, ensure you have:
 
 ---
 
-## 🎯 About AlgoCraft
+## 🎯 About CashLabs
 
-AlgoCraft is a **unified development platform** for the Algorand blockchain ecosystem, providing developers with powerful tools to build, test, and deploy smart contracts without complex local setup.
-
-### 🏆 xGov Proposal
-
-This project was submitted to the **Algorand xGov program** and unfortunately **did not receive funding**. Despite this setback, we continue to develop and improve AlgoCraft to serve the Algorand developer community.
-
-**Proposal Link:** [xGov #3262647286](https://xgov.algorand.co/proposal/3262647286)
+CashLabs is a **unified development platform** for the Bitcoin Cash blockchain ecosystem, providing developers with powerful tools to build, test, and deploy smart contracts without complex local setup.
 
 ---
 
 ## ✨ Key Features
 
 ### 🛠️ Multi-Framework Support
-- **PyTeal** - Python-based smart contract development
-- **TealScript** - TypeScript-based smart contract development  
-- **PuyaPy** - Pythonic smart contracts using AlgoPy
-- **PuyaTs** - TypeScript version of PuyaPy
+- **CashScript** - High-level language for Bitcoin Cash smart contracts
+- **Bitcoin Cash TypeScript** - TypeScript-based contract development  
+- **Libauth** - Powerful Bitcoin Cash library integration
 
 ### 💻 Development Environment
 - **Monaco Editor** - Full-featured VS Code editor in browser
@@ -60,7 +52,7 @@ This project was submitted to the **Algorand xGov program** and unfortunately **
 - **Code Generation** - AI-powered suggestions and completions
 
 ### 🔗 Blockchain Integration
-- **Built-in Wallet** - Create and manage Algorand wallets
+- **Built-in Wallet** - Create and manage Bitcoin Cash wallets
 - **TestNet/MainNet Support** - Deploy to both networks
 - **Transaction Builder** - Visual interface for contract interactions
 - **Deployment Tools** - One-click contract deployment
@@ -75,10 +67,10 @@ This project was submitted to the **Algorand xGov program** and unfortunately **
 
 ## 🌐 Platform Components
 
-### 1. **Main Site** - [algocraft.fun](https://algocraft.fun)
+### 1. **Main Site** - [cashlabs.io](https://cashlabs.io)
 Landing page and project showcase
 
-### 2. **IDE** - [ide.algocraft.fun](https://ide.algocraft.fun)
+### 2. **IDE** - [ide.cashlabs.io](https://ide.cashlabs.io)
 Full-featured development environment with:
 - Code editor with syntax highlighting
 - Integrated terminal for build output
@@ -86,7 +78,7 @@ Full-featured development environment with:
 - Wallet integration
 - Artifact management
 
-### 3. **Flow Builder** - [flow.algocraft.fun](https://flow.algocraft.fun)
+### 3. **Flow Builder** - [flow.cashlabs.io](https://flow.cashlabs.io)
 Visual smart contract workflow designer
 
 ---
@@ -97,8 +89,8 @@ Visual smart contract workflow designer
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/algorand-ide.git
-cd algorand-ide
+git clone https://github.com/cashlabs/cashlabs-ide.git
+cd cashlabs-ide
 
 # Install dependencies
 npm install
@@ -124,7 +116,7 @@ NEXT_PUBLIC_OPENROUTER_API_KEY=your_openrouter_api_key
 HF_API_KEY=your_huggingface_api_key
 
 # Compiler API
-NEXT_PUBLIC_COMPILER_API_URL=https://compiler.algocraft.fun
+NEXT_PUBLIC_COMPILER_API_URL=https://compiler.cashlabs.io
 ```
 
 ### Run Development Server
@@ -153,8 +145,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 - XTerm.js (Terminal emulator)
 
 **Blockchain:**
-- AlgoSDK (Algorand JavaScript SDK)
-- AlgoKit Utils (High-level utilities)
+- CashScript SDK (Bitcoin Cash Smart Contracts)
+- Libauth (High-level utilities)
 
 **AI & Search:**
 - OpenRouter API (LLM access)
@@ -168,18 +160,14 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ### Project Structure
 
 ```
-algorand-ide/
+cashlabs-ide/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API routes
 │   │   ├── compile/       # Compiler wrapper
 │   │   ├── load-contract/ # Contract loading
 │   │   └── projects/      # Project CRUD
-│   ├── puyats/           # PuyaTs IDE page
-│   ├── tealscript/       # TealScript IDE page
-│   ├── puyapy/           # PuyaPy IDE page
-│   └── pyteal/           # PyTeal IDE page
 ├── components/            # React components
-│   ├── algorand-ide.tsx  # Main IDE component
+│   ├── algorand-ide.tsx  # Main IDE component (Rebranded as CashLabsIDE)
 │   ├── code-editor.tsx   # Monaco editor wrapper
 │   ├── ai-chat.tsx       # AI assistant
 │   └── ...
@@ -198,21 +186,9 @@ All compilation requests go through the wrapper API at `/api/compile`:
 ```typescript
 POST /api/compile
 {
-  "type": "puyapy" | "puyats" | "tealscript" | "pyteal" | "generate-client",
-  "filename": "contract.algo.ts",
+  "type": "cashscript" | "bitcoincash-js",
+  "filename": "contract.cash",
   "code": "contract code" | "base64_encoded_code"
-}
-```
-
-### Contract Loading
-
-```typescript
-GET /api/load-contract?contract=<base64_encoded_contract>
-// Redirects to /puyats?contract=<base64>
-
-POST /api/load-contract
-{
-  "encoded": "base64_encoded_contract"
 }
 ```
 
@@ -221,7 +197,7 @@ POST /api/load-contract
 ## 🎨 Features in Detail
 
 ### 1. **Code Editor**
-- Syntax highlighting for TypeScript and Python
+- Syntax highlighting for CashScript and TypeScript
 - IntelliSense and auto-completion
 - Multi-file editing with tabs
 - Unsaved changes indicator
@@ -229,11 +205,11 @@ POST /api/load-contract
 ### 2. **Build System**
 - External compiler API integration
 - Real-time compilation feedback
-- Artifact management (TEAL, ARC32, etc.)
+- Artifact management
 - Error reporting and debugging
 
 ### 3. **Wallet Integration**
-- Create new Algorand wallets
+- Create new Bitcoin Cash wallets
 - Import existing wallets via mnemonic
 - View balance and transaction history
 - TestNet faucet integration
@@ -272,25 +248,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- **Algorand Foundation** - For the amazing blockchain platform
-- **AlgoKit Team** - For the development tools and utilities
-- **Algorand Community** - For continuous support and feedback
-- **xGov Program** - For the opportunity to propose this project
+- **Bitcoin Cash Community** - For the amazing blockchain platform
+- **CashScript Team** - For the development tools and utilities
 
 ---
 
 ## 📞 Contact & Support
 
-- **Website:** [algocraft.fun](https://algocraft.fun)
-- **IDE:** [ide.algocraft.fun](https://ide.algocraft.fun)
-- **Flow Builder:** [flow.algocraft.fun](https://flow.algocraft.fun)
-- **Issues:** [GitHub Issues](https://github.com/yourusername/algorand-ide/issues)
+- **Website:** [cashlabs.io](https://cashlabs.io)
+- **IDE:** [ide.cashlabs.io](https://ide.cashlabs.io)
+- **Flow Builder:** [flow.cashlabs.io](https://flow.cashlabs.io)
+- **Issues:** [GitHub Issues](https://github.com/cashlabs/cashlabs-ide/issues)
 
 ---
 
 <div align="center">
 
-**Built with ❤️ for the Algorand Community**
+**Built with ❤️ for the Bitcoin Cash Community**
 
 ⭐ Star us on GitHub if you find this project useful!
 

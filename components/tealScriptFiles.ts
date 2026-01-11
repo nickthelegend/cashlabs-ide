@@ -1,191 +1,59 @@
 /** @satisfies {import('@webcontainer/api').FileSystemTree} */
 export const tealScriptFiles = {
-  src: {
+  contracts: {
     directory: {
-      "main.algo.ts": {
+      "Helloworld.cash": {
         file: {
-          contents: `import { Contract } from '@algorandfoundation/tealscript'
+          contents: `pragma cashscript ^0.9.0;
 
-
-
-type EventID = uint64
-
-
-export class EventManager extends Contract {
-
-    maintainerAddress = GlobalStateKey<Address>({ key: 'maintainerAddress' })
-    
-
-    createApplication(maintainerAddress: Address): void {
-        this.maintainerAddress.value = maintainerAddress
-      }
-
-      createEvent(name: string) : void {
-        
-        log(name)
-        
-
-      }
-
-
-
-
-
+contract Helloworld(string greeting) {
+    function hello(string message) {
+        require(message == greeting);
+    }
 }
-
 `,
         },
       },
-      "helloworld.algo.ts": {
+      "TransferWithTimeout.cash": {
         file: {
-          contents: `import { Contract } from '@algorandfoundation/tealscript'
+          contents: `pragma cashscript ^0.9.0;
 
+contract TransferWithTimeout(pubkey sender, pubkey receiver, int timeout) {
+    function transfer(sig receiverSig) {
+        require(checkSig(receiverSig, receiver));
+    }
 
-
-export class HelloWorld extends Contract {
-
-
-    createApplication(): void {
-          log('Hello World');
-
-      }
-
-      
-
-        }
-
-
-
-`,
-        },
-      },
-      "deploy.ts": {
-        file: {
-          contents: `import { AlgoKitConfig, getAlgoKitConfig } from '@algorandfoundation/algokit-utils';
-import { HelloWorld } from './main';
-
-async function main() {
-  const config = getAlgoKitConfig();
-  
-  // Deploy the contract
-  const app = await HelloWorld.deploy({
-    config,
-    deployTimeParams: {},
-  });
-
-  console.log('Contract deployed with App ID:', app.appId);
-  console.log('Contract address:', app.appAddress);
-}
-
-main().catch(console.error);
-`,
-        },
-      },
-      "client.ts": {
-        file: {
-          contents: `import { AlgoKitConfig, getAlgoKitConfig } from '@algorandfoundation/algokit-utils';
-import { HelloWorld } from './main';
-
-export class HelloWorldClient {
-  private app: HelloWorld;
-  private config: AlgoKitConfig;
-
-  constructor(appId: number) {
-    this.config = getAlgoKitConfig();
-    this.app = new HelloWorld({ config: this.config, appId });
-  }
-
-  async callHello(sender: string): Promise<void> {
-    await this.app.hello({ sender });
-  }
-
-  async setMessage(sender: string, message: string): Promise<void> {
-    await this.app.setMessage({ 
-      sender,
-      message: new Uint8Array(Buffer.from(message, 'utf8'))
-    });
-  }
-
-  async getMessage(): Promise<string> {
-    const result = await this.app.getMessage();
-    return Buffer.from(result).toString('utf8');
-  }
-
-  async getCreator(): Promise<string> {
-    return await this.app.getCreator();
-  }
+    function timeout(sig senderSig) {
+        require(checkSig(senderSig, sender));
+        require(tx.age >= timeout);
+    }
 }
 `,
         },
       },
     },
   },
-  
-  artifacts: {
-    directory: {
-    }},
   "package.json": {
     file: {
       contents: `{
-  "name": "algorand-tealscript-project",
+  "name": "cashscript-project",
   "type": "module",
   "dependencies": {
-    "@algorandfoundation/algokit-utils": "^9.0.1",
-    "@algorandfoundation/tealscript": "^0.106.3",
-    "@algorandfoundation/algokit-client-generator": "^5.0.0",
-    "@jest/globals": "^29.5.0",
-    "jest": "^29.5.0",
-    "prettier": "^3.0.3",
-    "ts-jest": "^29.1.0",
-    "typescript": "5.0.2"
+    "cashscript": "^0.9.3",
+    "mainnet-js": "latest"
   },
   "scripts": {
-    "build": "tealscript src/*.algo.ts artifacts",
-    "test": "jest",
-    "deploy": "tsx src/deploy.ts",
-    "generate-client": "algokit generate client src/main.ts"
+    "build": "cashc contracts/*.cash --output artifacts",
+    "deploy": "node deploy.js"
   }
 }`,
-    },
-  },
-  "tsconfig.json": {
-    file: {
-      contents: `{
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "outDir": "./dist",
-    "rootDir": "./src"
-  },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist"]
-}`,
-    },
-  },
-  "jest.config.js": {
-    file: {
-      contents: `module.exports = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
-  testMatch: ['**/*.test.ts'],
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
-};
-`,
     },
   },
   "README.md": {
     file: {
-      contents: `# Algorand TealScript Project
+      contents: `# CashLabs Bitcoin Cash Project
 
-This project demonstrates how to build and deploy Algorand smart contracts using TealScript.
+This project demonstrates how to build and deploy Bitcoin Cash smart contracts using CashScript.
 
 ## Getting Started
 
@@ -194,51 +62,16 @@ This project demonstrates how to build and deploy Algorand smart contracts using
    npm install
    \`\`\`
 
-2. Build the contract:
+2. Compile the contract:
    \`\`\`bash
    npm run build
    \`\`\`
 
-3. Run tests:
-   \`\`\`bash
-   npm run test
-   \`\`\`
-
-4. Deploy to TestNet:
+3. Deploy to Chipnet:
    \`\`\`bash
    npm run deploy
    \`\`\`
-
-5. Generate client:
-   \`\`\`bash
-   npm run generate-client
-   \`\`\`
-
-## Project Structure
-
-- \`src/\` - Source code
-- \`tests/\` - Test files
-- \`dist/\` - Compiled output
-
-## Features
-
-- TypeScript-based smart contract development
-- Built-in testing framework
-- Client generation
-- Deployment automation
 `,
     },
   },
-  "algorand.json": {
-    file: {
-      contents: `{}`,
-    },
-  },
-  ".env": {
-    file: {
-      contents: `ALGOD_PORT=443
-      ALGOD_SERVER=https://testnet-api.4160.nodely.dev`,
-    },
-  },
-
 } 

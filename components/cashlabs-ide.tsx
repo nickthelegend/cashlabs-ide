@@ -4,7 +4,8 @@ import type React from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
 
 import { Sidebar } from "@/components/sidebar"
-import { CodeEditorDynamic as CodeEditor } from "@/components/code-editor-dynamic"
+import { CodeEditorDynamic } from "@/components/code-editor-dynamic"
+const CodeEditor = CodeEditorDynamic as any;
 import { WebContainerTerminal } from "@/components/webcontainer-terminal"
 import AIChat from "@/components/ai-chat"
 import { BuildToolbar } from "@/components/build-toolbar"
@@ -26,7 +27,7 @@ const supabase = createClient(
 
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import algosdk from "algosdk"
+import { DefaultWallet } from "mainnet-js"
 import {
   Dialog,
   DialogContent,
@@ -47,10 +48,10 @@ interface Wallet {
   privateKey: string
   mnemonic: string
   transactions: any[]
-  algoPrice: number
+  bchPrice: number
 }
 
-export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTemplateName, projectId }: { initialFiles: any, selectedTemplate: string, selectedTemplateName: string, projectId?: string }) {
+export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTemplateName, projectId }: { initialFiles: any, selectedTemplate: string, selectedTemplateName: string, projectId?: string }) {
   const [currentFiles, setCurrentFiles] = useState<any>(initialFiles);
 
   const getAllFileContents = (tree: any, currentPath: string = '') => {
@@ -112,7 +113,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     setIsReady(true);
 
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
-      const savedWallet = localStorage.getItem("algorand-wallet")
+      const savedWallet = localStorage.getItem("bch-wallet")
       if (savedWallet) {
         try {
           const parsedWallet = JSON.parse(savedWallet)
@@ -120,11 +121,11 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
             setWallet(parsedWallet)
           } else {
             console.error("Invalid wallet data in localStorage:", parsedWallet)
-            if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
+            if (typeof localStorage.removeItem === 'function') localStorage.removeItem("bch-wallet")
           }
         } catch (error) {
           console.error("Error parsing wallet from localStorage:", error)
-          if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
+          if (typeof localStorage.removeItem === 'function') localStorage.removeItem("bch-wallet")
         }
       }
     }
@@ -181,25 +182,25 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
   const createWallet = async () => {
     try {
-      const algosdk = await import("algosdk")
-      const account = algosdk.generateAccount()
+      const { DefaultWallet } = await import("mainnet-js")
+      const account = await DefaultWallet.newRandom()
 
       const newWallet = {
-        address: account.addr.toString(),
+        address: account.cashaddr || "",
         balance: 0,
-        privateKey: algosdk.secretKeyToMnemonic(account.sk),
-        mnemonic: algosdk.secretKeyToMnemonic(account.sk),
+        privateKey: account.privateKeyWif || "",
+        mnemonic: account.mnemonic || "",
         transactions: [],
-        algoPrice: 0,
+        bchPrice: 0,
       }
 
-      setWallet(newWallet)
+      setWallet(newWallet as any)
       if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
-        localStorage.setItem("algorand-wallet", JSON.stringify(newWallet))
+        localStorage.setItem("bch-wallet", JSON.stringify(newWallet))
       }
 
-      console.log("Wallet created! To fund with test ALGO, visit:")
-      console.log(`https://testnet.algoexplorer.io/dispenser?addr=${newWallet.address}`)
+      console.log("Wallet created! To fund with test BCH, visit:")
+      console.log(`https://chipnet.imaginary.cash/`)
     } catch (error) {
       console.error("Error creating wallet:", error)
     }
@@ -690,13 +691,16 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       if (!wallet) {
         throw new Error("Wallet not connected");
       }
+      handleTerminalOutput("Smart contract deployment for Bitcoin Cash is being integrated.");
+      return;
+      /*
       const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
       const creator = wallet;
 
       const { AlgorandClient } = await import("@algorandfoundation/algokit-utils");
       const algorandClient = AlgorandClient.fromConfig({
-        algodConfig: { server: "https://testnet-api.algonode.cloud", token: "" },
-        indexerConfig: { server: "https://testnet-idx.algonode.cloud", token: "" },
+        algodConfig: { server: "https://rest.mainnet.cash", token: "" },
+        indexerConfig: { server: "https://rest.mainnet.cash", token: "" },
       });
 
       const appFactory = algorandClient.client.getAppFactory({
@@ -720,11 +724,13 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           methodArgs: args,
           sender: account.addr,
           signer: algosdk.makeBasicAccountTransactionSigner(account)
-        });
+        } as any);
       } else {
         throw new Error('Contract has no CREATE handler (bare or ABI)');
       }
+      */
 
+      /*
       console.log("Deploy result:", deployResult);
       let appId = 'unknown';
       let txId = 'unknown';
@@ -740,6 +746,8 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         }
       }
       console.log("Extracted App ID:", appId, "Transaction ID:", txId);
+      */
+      /*
       const deployed = {
         appId,
         txId,
@@ -758,6 +766,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       setDeployedContracts(updated);
       setDeployedAppId(deployed.appId);
       setDeployStatus('success');
+      */
     } catch (error: any) {
       console.error("Deploy artifact failed:", error);
       setDeployStatus('error');
@@ -897,13 +906,16 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       if (!wallet) {
         throw new Error("Wallet not connected");
       }
+      handleTerminalOutput("Smart contract method execution for Bitcoin Cash is being integrated.");
+      return;
+      /*
       const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
       const creator = wallet;
 
       const { AlgorandClient } = await import("@algorandfoundation/algokit-utils");
       const algorandClient = AlgorandClient.fromConfig({
-        algodConfig: { server: "https://testnet-api.algonode.cloud", token: "" },
-        indexerConfig: { server: "https://testnet-idx.algonode.cloud", token: "" },
+        algodConfig: { server: "https://rest.mainnet.cash", token: "" },
+        indexerConfig: { server: "https://rest.mainnet.cash", token: "" },
       });
 
       const appClient = algorandClient.client.getAppClientById({
@@ -923,6 +935,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       })
 
       toast({ title: "Method executed successfully!", description: `Result: ${result.return}` });
+      */
     } catch (error: any) {
       console.error("Method execution failed:", error);
       toast({ title: "Method execution failed", description: error.message || String(error), variant: "destructive" });
@@ -1044,7 +1057,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
                       fileContents={fileContents}
                       onFileSelect={setActiveFile}
                       onFileClose={closeFile}
-                      onFileContentChange={async (filePath, content) => {
+                      onFileContentChange={async (filePath: string, content: string) => {
                         setFileContents((prev) => {
                           const updated = { ...prev, [filePath]: content };
                           return updated;
@@ -1293,7 +1306,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
                 <p className="text-sm text-muted-foreground mb-4">App ID: {deployedAppId}</p>
                 <Button
                   onClick={() => {
-                    window.open(`https://lora.algokit.io/testnet/application/${deployedAppId}`, '_blank');
+                    window.open(`https://blockdozer.com/app/${deployedAppId}`, '_blank');
                     setDeployStatus(null);
                   }}
                   className="w-full"

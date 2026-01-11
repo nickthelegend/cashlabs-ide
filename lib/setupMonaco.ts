@@ -15,7 +15,7 @@ const CDN_BASE = 'https://cdn.jsdelivr.net/npm/@algorandfoundation/algorand-type
 const TYPE_FILES = [
   'index.d.ts',
   'arc-28.d.ts',
-  'arrays.d.ts', 
+  'arrays.d.ts',
   'base-contract.d.ts',
   'box.d.ts',
   'compiled.d.ts',
@@ -36,9 +36,9 @@ const TYPE_FILES = [
   'internal/index.d.ts'
 ];
 
-async function loadAlgorandTypesFromCDN(monaco: any) {
-  console.log('Loading Algorand TypeScript types from CDN...');
-  
+async function loadBCHTypesFromCDN(monaco: any) {
+  console.log('Loading Bitcoin Cash TypeScript types from CDN...');
+
   try {
     const typePromises = TYPE_FILES.map(async (file) => {
       const url = `${CDN_BASE}/${file}`;
@@ -50,7 +50,7 @@ async function loadAlgorandTypesFromCDN(monaco: any) {
         }
         const content = await response.text();
         const uri = `file:///node_modules/@algorandfoundation/algorand-typescript/${file}`;
-        
+
         monaco.languages.typescript.typescriptDefaults.addExtraLib(content, uri);
         console.log(`Loaded type definitions: ${file}`);
         return { file, content };
@@ -59,30 +59,30 @@ async function loadAlgorandTypesFromCDN(monaco: any) {
         return null;
       }
     });
-    
+
     const results = await Promise.all(typePromises);
     const loaded = results.filter(r => r !== null);
-    console.log(`Successfully loaded ${loaded.length}/${TYPE_FILES.length} Algorand type files`);
-    
+    console.log(`Successfully loaded ${loaded.length}/${TYPE_FILES.length} Bitcoin Cash type files`);
+
   } catch (error) {
-    console.error('Failed to load Algorand types from CDN:', error);
+    console.error('Failed to load Bitcoin Cash types from CDN:', error);
   }
 }
 
 function setupPuyaPyIntelliSense(monaco: any) {
   console.log('Setting up PuyaPy IntelliSense...');
-  
+
   // Core algopy types
   const ALGOPY_CORE_TYPES = [
     { label: 'UInt64', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.UInt64', documentation: '64-bit unsigned integer, one of the primary data types on the AVM. Supports arithmetic operations.', insertText: 'UInt64' },
     { label: 'BigUInt', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.BigUInt', documentation: 'Variable length (max 512-bit) unsigned integer for large number operations', insertText: 'BigUInt' },
     { label: 'Bytes', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Bytes', documentation: 'Byte sequence with a maximum length of 4096 bytes. Represents binary data.', insertText: 'Bytes' },
     { label: 'String', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.String', documentation: 'UTF-8 encoded string type. Length is total bytes, not characters.', insertText: 'String' },
-    { label: 'Account', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Account', documentation: 'Represents an Algorand network account with properties like balance and auth_address', insertText: 'Account' },
-    { label: 'Application', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Application', documentation: 'Represents an Algorand application with ID and associated metadata', insertText: 'Application' },
-    { label: 'Asset', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Asset', documentation: 'Represents an Algorand Standard Asset with properties like creator and decimals', insertText: 'Asset' },
-    { label: 'Contract', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Contract', documentation: 'Base class for Algorand smart contracts requiring approval and clear state programs', insertText: 'Contract' },
-    { label: 'ARC4Contract', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.ARC4Contract', documentation: 'Contract conforming to ARC-4 ABI specification with automatic method routing', insertText: 'ARC4Contract' },
+    { label: 'Account', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Account', documentation: 'Represents a Bitcoin Cash network account with properties like balance and auth_address', insertText: 'Account' },
+    { label: 'Application', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Application', documentation: 'Represents a Bitcoin Cash application with ID and associated metadata', insertText: 'Application' },
+    { label: 'Asset', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Asset', documentation: 'Represents a Bitcoin Cash Token with properties like creator and decimals', insertText: 'Asset' },
+    { label: 'Contract', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Contract', documentation: 'Base class for Bitcoin Cash smart contracts requiring approval and clear state programs', insertText: 'Contract' },
+    { label: 'ARC4Contract', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.ARC4Contract', documentation: 'Contract conforming to Cash-4 ABI specification with automatic method routing', insertText: 'ARC4Contract' },
     { label: 'GlobalState', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.GlobalState', documentation: 'Global state associated with the application. Usage: GlobalState[Type](initial_value)', insertText: 'GlobalState' },
     { label: 'LocalState', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.LocalState', documentation: 'Local state associated with the application and an account', insertText: 'LocalState' },
     { label: 'Box', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.Box', documentation: 'Abstracts the reading and writing of a single value to a single box storage', insertText: 'Box' },
@@ -97,7 +97,7 @@ function setupPuyaPyIntelliSense(monaco: any) {
     { label: 'arc4.String', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.arc4.String', documentation: 'ARC-4 encoded UTF-8 string. Use .native to convert to algopy.String', insertText: 'arc4.String' },
     { label: 'arc4.Bool', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.arc4.Bool', documentation: 'ARC-4 encoded boolean value', insertText: 'arc4.Bool' },
     { label: 'arc4.UInt64', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.arc4.UInt64', documentation: 'ARC-4 encoded 64-bit unsigned integer. Use .native to convert to UInt64', insertText: 'arc4.UInt64' },
-    { label: 'arc4.Address', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.arc4.Address', documentation: '32-byte Algorand address in ARC-4 encoding', insertText: 'arc4.Address' },
+    { label: 'arc4.Address', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.arc4.Address', documentation: '32-byte Bitcoin Cash address in ARC-4 encoding', insertText: 'arc4.Address' },
     { label: 'arc4.DynamicArray', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.arc4.DynamicArray', documentation: 'ARC-4 encoded variable-size array. Usage: arc4.DynamicArray[ItemType]', insertText: 'arc4.DynamicArray' },
     { label: 'arc4.StaticArray', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.arc4.StaticArray', documentation: 'ARC-4 encoded fixed-size array. Usage: arc4.StaticArray[ItemType, Literal[Size]]', insertText: 'arc4.StaticArray' },
     { label: 'arc4.Struct', kind: monaco.languages.CompletionItemKind.Class, detail: 'algopy.arc4.Struct', documentation: 'ARC-4 encoded named tuple (struct). Supports frozen and kw_only parameters', insertText: 'arc4.Struct' },
@@ -200,10 +200,10 @@ function setupPuyaPyIntelliSense(monaco: any) {
 
 export function setupMonacoTypes(monaco: any, template?: Template) {
   console.log('Setting up Monaco types for template:', template);
-  
+
   // Load template-specific types and IntelliSense
   if (template === 'puyats') {
-    loadAlgorandTypesFromCDN(monaco);
+    loadBCHTypesFromCDN(monaco);
   } else if (template === 'puyapy') {
     setupPuyaPyIntelliSense(monaco);
   }
@@ -218,6 +218,6 @@ export function setupMonacoTypes(monaco: any, template?: Template) {
     typeRoots: ["file:///__typings__"],
     strict: false
   });
-  
+
   console.log('Monaco setup complete for template:', template);
 }

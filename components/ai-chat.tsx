@@ -74,24 +74,24 @@ const AIChat: React.FC<AIChatProps> = ({ title, selectedTemplate = "Pyteal", act
     const testConnection = async () => {
       const tableName = getTableName(selectedTemplate);
       console.log(`🔌 Testing Supabase connection for table: ${tableName}`);
-      
+
       try {
         // Test connection by fetching table info
         const { data, error } = await supabase
           .from(tableName)
           .select('count')
           .limit(1);
-        
+
         if (error) {
           console.log(`ℹ️ Embeddings table ${tableName} not available - using fallback context`);
         } else {
           console.log(`✅ Supabase connection successful for table ${tableName}`);
-          
+
           // Get actual table count
           const { count, error: countError } = await supabase
             .from(tableName)
             .select('*', { count: 'exact', head: true });
-          
+
           if (countError) {
             console.error(`❌ Error getting table count:`, countError);
           } else {
@@ -104,7 +104,7 @@ const AIChat: React.FC<AIChatProps> = ({ title, selectedTemplate = "Pyteal", act
     };
 
     testConnection();
-    
+
     // Add a test message to verify markdown rendering
     console.log('🧪 Testing markdown rendering...');
     const testMarkdown = '```typescript\nconst hello = "world";\nconsole.log(hello);\n```';
@@ -155,24 +155,24 @@ export class ContractName extends Contract {
 
 Example: If user asks for public hello(name: string, age: number): string
 You output: public hello(name: string, age: uint64): string`,
-      
-      "TealScript": `TealScript is a TypeScript-based language for Algorand smart contracts. Key features:
+
+      "TealScript": `TealScript is a TypeScript-based language for Bitcoin Cash smart contracts. Key features:
 - Contracts extend Contract class
 - Use decorators for ABI methods
 - State variables with GlobalStateKey and LocalStateKey
-- Built-in Algorand types and operations
+- Built-in Bitcoin Cash types and operations
 - Compile to TEAL and generate ARC56 artifacts
 - Test with Jest framework`,
-      
-      "PuyaPy": `PuyaPy (AlgoPy) is a Pythonic framework for Algorand smart contracts. Key features:
+
+      "PuyaPy": `PuyaPy (AlgoPy) is a Pythonic framework for Bitcoin Cash smart contracts. Key features:
 - Import from algopy module
 - Contracts extend ARC4Contract or Contract
 - Use @abimethod decorator for ABI methods
 - Type hints with UInt64, Bytes, Account, etc.
 - Global and local state with typed storage
 - Compile with 'puyapy' command to generate TEAL`,
-      
-      "Pyteal": `PyTeal is a Python library for writing Algorand smart contracts. Key features:
+
+      "Pyteal": `PyTeal is a Python library for writing Bitcoin Cash smart contracts. Key features:
 - Import from pyteal module
 - Use Expr types for all operations
 - Approval and clear programs
@@ -180,7 +180,7 @@ You output: public hello(name: string, age: uint64): string`,
 - Compile to TEAL using compileTeal()
 - Note: PyTeal is deprecated, consider using PuyaPy instead`
     };
-    
+
     return contexts[template] || contexts["PuyaTs"];
   };
 
@@ -196,11 +196,11 @@ You output: public hello(name: string, age: uint64): string`,
     try {
       console.log(`🤖 Sending request to OpenAI API...`);
       console.log(`📝 Prompt length: ${prompt.length} characters`);
-      
-      const systemPrompt = isCodeEdit 
+
+      const systemPrompt = isCodeEdit
         ? `You are a coding assistant integrated into an IDE. The user will provide the current code file. Your task is to return the full modified code with the requested changes applied. Do not explain, just return the updated code wrapped in a single code block. Preserve formatting, comments, and structure. Do not remove unrelated code.`
-        : `You are a helpful Algorand development assistant specializing in ${selectedTemplate}. You have deep knowledge of Algorand smart contract development. Always format your responses using markdown for better readability. Use code blocks with appropriate language tags for code examples. Provide practical, working examples when possible.`;
-      
+        : `You are a helpful Bitcoin Cash development assistant specializing in ${selectedTemplate}. You have deep knowledge of Bitcoin Cash smart contract development. Always format your responses using markdown for better readability. Use code blocks with appropriate language tags for code examples. Provide practical, working examples when possible.`;
+
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -221,22 +221,22 @@ You output: public hello(name: string, age: uint64): string`,
       }
 
       const data = await response.json();
-      
+
       if (data.error) {
         throw new Error(`API Error: ${data.error.message || 'Unknown error'}`);
       }
-      
+
       console.log(`✅ OpenAI API response received successfully`);
       console.log(`🤖 AI response length: ${data.choices[0].message.content.length} characters`);
-      
+
       return data.choices[0].message.content;
     } catch (error: any) {
       console.error("❌ OpenAI API error:", error);
-      
+
       if (error.message?.includes('rate-limited') || error.message?.includes('429')) {
         return "The AI service is currently rate-limited. Please try switching to a different model or wait a moment before trying again.";
       }
-      
+
       return "I apologize, but I'm having trouble connecting to the AI service right now. Please try again later.";
     }
   };
@@ -246,7 +246,7 @@ You output: public hello(name: string, age: uint64): string`,
       const userMessage = inputMessage;
       console.log(`🚀 Starting message processing for: "${userMessage}"`);
       console.log(`🎯 Selected template: ${selectedTemplate}`);
-      
+
       setMessages((prevMessages) => [...prevMessages, { type: 'user', text: userMessage }]);
       setInputMessage('');
       setIsLoading(true);
@@ -259,33 +259,33 @@ You output: public hello(name: string, age: uint64): string`,
 
         // Step 4: Generate answer using OpenAI
         console.log(`🤖 Step 4: Generating answer with context...`);
-        
+
         // Check if user wants to edit current file
-        const isCodeEditRequest = activeFile && fileContent && (
+        const isCodeEditRequest = Boolean(activeFile && fileContent && (
           userMessage.toLowerCase().includes('edit') ||
           userMessage.toLowerCase().includes('modify') ||
           userMessage.toLowerCase().includes('change') ||
           userMessage.toLowerCase().includes('update') ||
           userMessage.toLowerCase().includes('add') ||
           userMessage.toLowerCase().includes('fix')
-        );
-        
+        ));
+
         let prompt: string;
-        if (isCodeEditRequest) {
+        if (isCodeEditRequest && fileContent) {
           const filePreview = fileContent.split('\n').slice(0, 5).join('\n');
           prompt = `Current file: ${activeFile}\n\nFile preview (first 5 lines):\n${filePreview}...\n\nFull file content:\n${fileContent}\n\nUser request: ${userMessage}\n\nReturn the complete modified file with the requested changes.`;
         } else {
           prompt = `Use the following context to answer the question about ${selectedTemplate} development:\n\nContext:\n${context}\n\nQuestion: ${userMessage}\n\nPlease provide a helpful and accurate answer based on the context provided. Format your response using markdown for better readability. Use code blocks with appropriate language tags for code examples.`;
         }
-        
+
         console.log(`📝 Final prompt length: ${prompt.length} characters`);
         console.log(`📋 Full prompt being sent to AI:`);
         console.log(`--- START PROMPT ---`);
         console.log(prompt);
         console.log(`--- END PROMPT ---`);
-        
+
         const answer = await askOpenAI(prompt, isCodeEditRequest);
-        
+
         // If it's a code edit request, extract and apply the code
         if (isCodeEditRequest && activeFile && onFileUpdate) {
           const extractedCode = extractCodeFromResponse(answer);
@@ -303,9 +303,9 @@ You output: public hello(name: string, age: uint64): string`,
         setMessages((prevMessages) => [...prevMessages, { type: 'ai', text: answer }]);
       } catch (error) {
         console.error("❌ Error processing message:", error);
-        setMessages((prevMessages) => [...prevMessages, { 
-          type: 'ai', 
-          text: "I apologize, but I encountered an error while processing your request. Please try again." 
+        setMessages((prevMessages) => [...prevMessages, {
+          type: 'ai',
+          text: "I apologize, but I encountered an error while processing your request. Please try again."
         }]);
       } finally {
         setIsLoading(false);
@@ -325,7 +325,7 @@ You output: public hello(name: string, age: uint64): string`,
     code: ({ node, inline, className, children, ...props }: any) => {
       const match = /language-(\w+)/.exec(className || '');
       console.log('🔍 Code component rendered:', { inline, className, match, children: String(children).substring(0, 50) });
-      
+
       return !inline && match ? (
         <div className="code-block-container relative group">
           <div className="code-language-badge">
@@ -402,9 +402,9 @@ You output: public hello(name: string, age: uint64): string`,
       </blockquote>
     ),
     a: ({ href, children }: any) => (
-      <a 
-        href={href} 
-        target="_blank" 
+      <a
+        href={href}
+        target="_blank"
         rel="noopener noreferrer"
         className="text-blue-400 hover:text-blue-300 underline"
       >
@@ -457,9 +457,9 @@ You output: public hello(name: string, age: uint64): string`,
       <hr className="border-t border-gray-600 my-6" />
     ),
     img: ({ src, alt }: any) => (
-      <img 
-        src={src} 
-        alt={alt} 
+      <img
+        src={src}
+        alt={alt}
         className="max-w-full h-auto rounded-lg my-4 border border-gray-600"
       />
     ),
@@ -503,59 +503,58 @@ You output: public hello(name: string, age: uint64): string`,
       </div>
       <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800" style={{ minHeight: 0 }}>
         <div className="p-4 flex flex-col space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center min-h-[200px] text-center text-[#969696]">
-                  <h2 className="text-xl mb-2">Welcome back, builder!</h2>
-                  <p className="mb-1">Ask questions about {selectedTemplate} development</p>
-                  <p className="text-sm">I'm here to help with Algorand smart contracts!</p>
-                </div>
-              ) : (
-                messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[85%] p-4 rounded-lg break-words ${
-                        message.type === 'user'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-800 text-white border border-gray-700'
-                      }`}
-                    >
-                      {message.type === 'user' ? (
-                        <div className="whitespace-pre-wrap">{message.text}</div>
-                      ) : (
-                        <div className="ai-chat-prose">
-                          <ReactMarkdown
-                            remarkPlugins={[remarkGfm]}
-                            rehypePlugins={[rehypeRaw, rehypeHighlight]}
-                            components={markdownComponents}
-                          >
-                            {message.text}
-                          </ReactMarkdown>
-                        </div>
-                      )}
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center min-h-[200px] text-center text-[#969696]">
+              <h2 className="text-xl mb-2">Welcome back, builder!</h2>
+              <p className="mb-1">Ask questions about {selectedTemplate} development</p>
+              <p className="text-sm">I'm here to help with Bitcoin Cash smart contracts!</p>
+            </div>
+          ) : (
+            messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[85%] p-4 rounded-lg break-words ${message.type === 'user'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-800 text-white border border-gray-700'
+                    }`}
+                >
+                  {message.type === 'user' ? (
+                    <div className="whitespace-pre-wrap">{message.text}</div>
+                  ) : (
+                    <div className="ai-chat-prose">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw, rehypeHighlight]}
+                        components={markdownComponents}
+                      >
+                        {message.text}
+                      </ReactMarkdown>
                     </div>
-                  </div>
-                ))
-              )}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="max-w-[85%] p-4 rounded-lg bg-gray-800 text-white border border-gray-700">
-                    <div className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
-                      Thinking...
-                    </div>
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
+            ))
+          )}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="max-w-[85%] p-4 rounded-lg bg-gray-800 text-white border border-gray-700">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white"></div>
+                  Thinking...
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
       </div>
       <div className="p-4 border-t border-[#3e3e42] flex items-center gap-2 flex-shrink-0">
         <Input
           type="text"
-          placeholder="Ask about Algorand development..."
+          placeholder="Ask about Bitcoin Cash development..."
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyDown={handleKeyDown}

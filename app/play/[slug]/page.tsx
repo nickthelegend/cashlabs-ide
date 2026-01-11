@@ -1,5 +1,5 @@
 
-import AlgorandIDE from '@/components/algorand-ide';
+import CashLabsIDE from '@/components/cashlabs-ide';
 
 async function getTemplateFiles(slug: string) {
   const res = await fetch(`https://raw.githubusercontent.com/nickthelegend/algorand-ide-templates/refs/heads/main/playground/${slug}/files.ts`, { next: { revalidate: 3600 } });
@@ -41,5 +41,5 @@ export default async function PlayPage({ params }: { params: { slug: string } })
   const files = await getTemplateFiles(slug);
   const lang = await getTemplateLang(slug);
 
-  return <AlgorandIDE initialFiles={files} selectedTemplate={lang} templateName={slug} />;
+  return <CashLabsIDE initialFiles={files} selectedTemplate={lang} selectedTemplateName={slug} />;
 }

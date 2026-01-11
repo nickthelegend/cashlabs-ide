@@ -18,7 +18,7 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
   const [lines, setLines] = useState<TerminalLine[]>([
     { type: "success", content: `$ Welcome to ${title}`, timestamp: new Date() },
     { type: "info", content: 'Type "help" to see available commands', timestamp: new Date() },
-    { type: "info", content: 'Type "algorand-help" for Algorand development guide', timestamp: new Date() },
+    { type: "info", content: 'Type "bch-help" for Bitcoin Cash development guide', timestamp: new Date() },
   ])
   const [currentInput, setCurrentInput] = useState("")
   const [commandHistory, setCommandHistory] = useState<string[]>([])
@@ -41,8 +41,8 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
     setLines((prev) => [...prev, { type, content, timestamp: new Date() }])
   }
 
-  const showAlgorandHelp = () => {
-    addLine("output", "🚀 ALGORAND DEVELOPMENT GUIDE")
+  const showBCHHelp = () => {
+    addLine("output", "🚀 BITCOIN CASH DEVELOPMENT GUIDE")
     addLine("output", "==================================")
     addLine("output", "")
     addLine("output", "📚 GETTING STARTED:")
@@ -59,7 +59,7 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
     addLine("output", "  • Use 'deploy-testnet' when ready")
     addLine("output", "")
     addLine("output", "📖 USEFUL COMMANDS:")
-    addLine("output", "  • 'algorand-status' - Check Algorand network status")
+    addLine("output", "  • 'bch-status' - Check Bitcoin Cash network status")
     addLine("output", "  • 'show-contract' - Display current contract")
     addLine("output", "  • 'show-account' - Display account info")
     addLine("output", "  • 'show-balance' - Check account balance")
@@ -71,10 +71,10 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
     addLine("output", "  • Sandbox: Local development environment")
     addLine("output", "")
     addLine("output", "📚 RESOURCES:")
-    addLine("output", "  • Docs: https://developer.algorand.org")
-    addLine("output", "  • PyTeal: https://pyteal.readthedocs.io")
-    addLine("output", "  • TealScript: https://tealscript.algorand.dev")
-    addLine("output", "  • SDK: https://developer.algorand.org/docs/sdks")
+    addLine("output", "  • Docs: https://cashscript.org")
+    addLine("output", "  • CashScript: https://cashscript.org")
+    addLine("output", "  • Libauth: https://libauth.org")
+    addLine("output", "  • SDK: https://mainnet.cash")
   }
 
   const showDetailedHelp = () => {
@@ -112,19 +112,19 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
     addLine("output", "  git commit -m     Commit changes")
     addLine("output", "  git push          Push to remote")
     addLine("output", "")
-    addLine("output", "🚀 ALGORAND COMMANDS:")
-    addLine("output", "  algorand-help     Show Algorand development guide")
+    addLine("output", "🚀 BITCOIN CASH COMMANDS:")
+    addLine("output", "  bch-help          Show Bitcoin Cash development guide")
     addLine("output", "  check-env         Check development environment")
-    addLine("output", "  install-deps      Install Algorand dependencies")
+    addLine("output", "  install-deps      Install Bitcoin Cash dependencies")
     addLine("output", "  build-contract    Build smart contract")
     addLine("output", "  test-contract     Test smart contract")
     addLine("output", "  deploy-testnet    Deploy to TestNet")
-    addLine("output", "  algorand-status   Check network status")
+    addLine("output", "  bch-status        Check network status")
     addLine("output", "  show-contract     Display contract info")
     addLine("output", "  show-account      Display account info")
     addLine("output", "  show-balance      Check account balance")
     addLine("output", "  create-account    Generate new account")
-    addLine("output", "  fund-account      Fund account with test ALGO")
+    addLine("output", "  fund-account      Fund account with test BCH")
     addLine("output", "  compile-teal      Compile PyTeal to TEAL")
     addLine("output", "  validate-teal     Validate TEAL code")
     addLine("output", "")
@@ -132,7 +132,7 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
     addLine("output", "  • Use Tab for command completion")
     addLine("output", "  • Use ↑/↓ arrows for command history")
     addLine("output", "  • Use Ctrl+C to cancel running commands")
-    addLine("output", "  • Check 'algorand-help' for detailed guide")
+    addLine("output", "  • Check 'bch-help' for detailed guide")
   }
 
   const executeCommand = async (command: string) => {
@@ -160,15 +160,15 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         showDetailedHelp()
         break
 
-      case "algorand-help":
-        showAlgorandHelp()
+      case "bch-help":
+        showBCHHelp()
         break
 
       case "clear":
         setLines([
           { type: "success", content: `$ Welcome to ${title}`, timestamp: new Date() },
           { type: "info", content: 'Type "help" to see available commands', timestamp: new Date() },
-          { type: "info", content: 'Type "algorand-help" for Algorand development guide', timestamp: new Date() },
+          { type: "info", content: 'Type "bch-help" for Bitcoin Cash development guide', timestamp: new Date() },
         ])
         break
 
@@ -233,9 +233,9 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
             addLine("output", "  }")
             addLine("output", "}")
           } else if (filename === "README.md") {
-            addLine("output", "# Algorand Smart Contract Project")
+            addLine("output", "# Bitcoin Cash Smart Contract Project")
             addLine("output", "")
-            addLine("output", "This project demonstrates Algorand smart contract development.")
+            addLine("output", "This project demonstrates Bitcoin Cash smart contract development.")
             addLine("output", "")
             addLine("output", "## Getting Started")
             addLine("output", "1. Install dependencies: `pip install -r requirements.txt`")
@@ -342,13 +342,13 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         }
         break
 
-      // Algorand-specific commands
+      // Bitcoin Cash-specific commands
       case "check-env":
-        addLine("output", "🔍 Checking Algorand development environment...")
+        addLine("output", "🔍 Checking Bitcoin Cash development environment...")
         addLine("output", "")
         addLine("output", "✅ Python 3.11.0 - OK")
         addLine("output", "✅ PyTeal 0.20.1 - OK")
-        addLine("output", "✅ Algorand SDK 2.7.0 - OK")
+        addLine("output", "✅ CashScript SDK 0.8.0 - OK")
         addLine("output", "✅ Node.js 18.0.0 - OK")
         addLine("output", "✅ Git 2.39.0 - OK")
         addLine("output", "")
@@ -356,7 +356,7 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         break
 
       case "install-deps":
-        addLine("output", "📦 Installing Algorand dependencies...")
+        addLine("output", "📦 Installing Bitcoin Cash dependencies...")
         addLine("output", "Installing pyteal...")
         await new Promise((resolve) => setTimeout(resolve, 1000))
         addLine("output", "Installing py-algorand-sdk...")
@@ -389,7 +389,7 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         break
 
       case "deploy-testnet":
-        addLine("output", "🚀 Deploying to Algorand TestNet...")
+        addLine("output", "🚀 Deploying to Bitcoin Cash TestNet...")
         addLine("output", "Connecting to TestNet...")
         await new Promise((resolve) => setTimeout(resolve, 1000))
         addLine("output", "Submitting transaction...")
@@ -407,8 +407,8 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         addLine("info", "View on TestNet Explorer: https://testnet.algoexplorer.io/application/12345678")
         break
 
-      case "algorand-status":
-        addLine("output", "🌐 Algorand Network Status")
+      case "bch-status":
+        addLine("output", "🌐 Bitcoin Cash Network Status")
         addLine("output", "========================")
         addLine("output", "")
         addLine("output", "🔗 TestNet:")
@@ -421,7 +421,7 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         addLine("output", "  Block Height: 45,678,901")
         addLine("output", "  Last Block: 4 seconds ago")
         addLine("output", "")
-        addLine("output", "💰 Current ALGO Price: $0.15")
+        addLine("output", "💰 Current BCH Price: $500.00")
         break
 
       case "show-contract":
@@ -449,7 +449,7 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         addLine("output", "=====================")
         addLine("output", "")
         addLine("output", "📍 Address: ABC123DEF456GHI789JKL012MNO345PQR678STU901VWX234YZA567BCD890")
-        addLine("output", "💰 Balance: 100.0 ALGO")
+        addLine("output", "💰 Balance: 100.0 BCH")
         addLine("output", "🔐 Status: Online")
         addLine("output", "📅 Created: 2024-01-15")
         addLine("output", "")
@@ -463,17 +463,17 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         addLine("output", "=================")
         addLine("output", "")
         addLine("output", "📍 Address: ABC123...BCD890")
-        addLine("output", "💎 ALGO Balance: 100.0 ALGO")
-        addLine("output", "💵 USD Value: $15.00")
+        addLine("output", "💎 BCH Balance: 100.0 BCH")
+        addLine("output", "💵 USD Value: $50.00")
         addLine("output", "")
         addLine("output", "📊 Balance History:")
-        addLine("output", "  Last 24h: +5.0 ALGO")
-        addLine("output", "  Last 7d: +12.5 ALGO")
-        addLine("output", "  Last 30d: +25.0 ALGO")
+        addLine("output", "  Last 24h: +5.0 BCH")
+        addLine("output", "  Last 7d: +12.5 BCH")
+        addLine("output", "  Last 30d: +25.0 BCH")
         break
 
       case "create-account":
-        addLine("output", "🆕 Creating new Algorand account...")
+        addLine("output", "🆕 Creating new Bitcoin Cash account...")
         await new Promise((resolve) => setTimeout(resolve, 1000))
         addLine("output", "")
         addLine("output", "✅ Account created successfully!")
@@ -483,23 +483,23 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
         addLine("output", "📝 Mnemonic: [REDACTED]")
         addLine("output", "")
         addLine("warning", "⚠️  IMPORTANT: Save your private key and mnemonic securely!")
-        addLine("info", "💡 Use 'fund-account' to add test ALGO to this account")
+        addLine("info", "💡 Use 'fund-account' to add test BCH to this account")
         break
 
       case "fund-account":
-        addLine("output", "💸 Funding account with test ALGO...")
+        addLine("output", "💸 Funding account with test BCH...")
         addLine("output", "Connecting to TestNet faucet...")
         await new Promise((resolve) => setTimeout(resolve, 1000))
-        addLine("output", "Requesting 100 ALGO...")
+        addLine("output", "Requesting 100 BCH...")
         await new Promise((resolve) => setTimeout(resolve, 2000))
         addLine("output", "Transaction confirmed!")
         addLine("output", "")
-        addLine("success", "✅ Account funded with 100 ALGO")
+        addLine("success", "✅ Account funded with 100 BCH")
         addLine("info", "💡 You can now deploy contracts and make transactions")
         addLine("output", "")
         addLine("output", "🌐 Manual funding:")
         addLine("output", "Visit: https://testnet.algoexplorer.io/dispenser")
-        addLine("output", "Enter your wallet address to receive test ALGO")
+        addLine("output", "Enter your wallet address to receive test BCH")
         break
 
       case "compile-teal":
@@ -546,7 +546,7 @@ export function XTermTerminal({ title }: XTermTerminalProps) {
       default:
         addLine("error", `Command not found: ${cmd}`)
         addLine("output", 'Type "help" to see available commands')
-        addLine("output", 'Type "algorand-help" for Algorand development guide')
+        addLine("output", 'Type "bch-help" for Bitcoin Cash development guide')
     }
 
     setIsProcessing(false)

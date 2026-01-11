@@ -9,11 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { 
-  Eye, 
-  Send, 
-  AlertTriangle, 
-  CheckCircle, 
+import {
+  Eye,
+  Send,
+  AlertTriangle,
+  CheckCircle,
   Copy,
   Loader2
 } from "lucide-react"
@@ -129,7 +129,7 @@ function ArgInput({
         <Input
           value={value || ''}
           onChange={e => onChange(e.target.value)}
-          placeholder="Enter Algorand address..."
+          placeholder="Enter Bitcoin Cash address..."
           className="font-mono text-sm"
         />
       </div>
@@ -369,7 +369,7 @@ export function TransactionBuilder({
                         <span className="ml-2 font-mono">{simulationResult.gasUsed}</span>
                       </div>
                     </div>
-                    
+
                     {simulationResult.returnValue && (
                       <div>
                         <Label className="text-sm font-medium">Return Value:</Label>
@@ -435,7 +435,7 @@ export function TransactionBuilder({
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="fee" className="text-sm font-medium">
-                  Transaction Fee (microAlgos)
+                  Transaction Fee (satoshis)
                 </Label>
                 <Input
                   id="fee"
@@ -446,7 +446,7 @@ export function TransactionBuilder({
                   className="font-mono text-sm"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Minimum fee: 1000 microAlgos (0.001 ALGO)
+                  Minimum fee: 1000 satoshis (0.00001 BCH)
                 </p>
               </div>
 

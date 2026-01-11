@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
-import AlgorandIDE from '@/components/algorand-ide'
+import CashLabsIDE from '@/components/cashlabs-ide'
 import { createClient } from '@supabase/supabase-js'
 
 const supabase = createClient(
@@ -21,7 +21,7 @@ export default function ProjectPage() {
     const fetchProject = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        
+
         const { data: project, error } = await supabase
           .from('projects')
           .select(`
@@ -88,7 +88,7 @@ export default function ProjectPage() {
   const fileStructure = project.project_files?.[0]?.file_structure || {};
 
   return (
-    <AlgorandIDE
+    <CashLabsIDE
       initialFiles={fileStructure}
       selectedTemplate={project.template}
       selectedTemplateName={project.name}

@@ -1,58 +1,32 @@
 export const puyaPyfiles = {
-  "contract.py": {
+  "index.js": {
     file: {
-      contents: `from algopy import Contract, Txn, log
+      contents: `import { DefaultWallet } from 'mainnet-js';
 
+async function run() {
+    // Create a new wallet on Chipnet
+    const wallet = await DefaultWallet.newRandom({ network: 'chipnet' });
+    console.log("New Wallet Address:", wallet.cashaddr);
+    console.log("Mnemonic:", wallet.mnemonic);
 
-class HelloWorldContract(Contract):
-    def approval_program(self) -> bool:
-        name = Txn.application_args(0)
-        log(b"Hello, " + name)
-        return True
+    // Get balance
+    const balance = await wallet.getBalance();
+    console.log("Balance:", balance.bch, "BCH");
+}
 
-    def clear_state_program(self) -> bool:
-        return True
-`,
-    },
-  },
-  "README.md": {
-    file: {
-      contents: `
-# PuyaPy Template
-
-This project demonstrates how to build Algorand smart contracts using PuyaPy.
-
-## Commands
-
-- "npm install" - Install dependencies
-- 'npm run build" - Compile the smart contract
-- "npm run test" - Run tests
-- "npm run deploy" - Deploy to network
+run();
 `,
     },
   },
   "package.json": {
     file: {
       contents: `{
-  "name": "puyapy-template",
-  "version": "1.0.0",
-  "description": "PuyaPy Algorand Smart Contract Template",
-  "main": "index.js",
-  "scripts": {
-    "install": "pip install -r requirements.txt",
-    "build": "puyapy compile contract.py",
-    "test": "echo \"No tests yet\"",
-    "deploy": "echo \"Deployment not implemented yet\""
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "name": "mainnet-js-template",
+  "type": "module",
+  "dependencies": {
+    "mainnet-js": "latest"
+  }
 }`,
     },
   },
-  "requirements.txt": {
-    file: {
-      contents: `algopy==0.1.0`,
-    },
-  },
-};
+} 

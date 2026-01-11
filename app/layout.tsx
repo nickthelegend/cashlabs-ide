@@ -19,8 +19,8 @@ if (typeof global !== 'undefined' && (!global.localStorage || typeof (global as 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Algocraft IDE",
-  description: "An online IDE for Algorand development",
+  title: "CashLabs",
+  description: "An online IDE for Bitcoin Cash development",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",

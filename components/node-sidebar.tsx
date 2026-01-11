@@ -8,39 +8,39 @@ interface NodeSidebarProps {
   type: "transaction"
 }
 
-const algorandNodes = [
+const bchNodes = [
   {
     id: "account",
     label: "ACCOUNT",
-    description: "Algorand account",
+    description: "Bitcoin Cash account",
     color: "bg-blue-600",
     category: "Core",
   },
   {
     id: "payment",
     label: "PAYMENT",
-    description: "Send ALGO",
+    description: "Send BCH",
     color: "bg-green-600",
     category: "Transaction",
   },
   {
     id: "assetTransfer",
     label: "ASSET TRANSFER",
-    description: "Transfer ASA tokens",
+    description: "Transfer Tokens",
     color: "bg-purple-600",
     category: "Transaction",
   },
   {
     id: "assetCreate",
     label: "CREATE ASSET",
-    description: "Create new ASA",
+    description: "Create Token",
     color: "bg-yellow-600",
     category: "Transaction",
   },
   {
     id: "assetFreeze",
     label: "FREEZE ASSET",
-    description: "Freeze/Unfreeze ASA",
+    description: "Freeze/Unfreeze Token",
     color: "bg-teal-600",
     category: "Transaction",
   },
@@ -81,7 +81,7 @@ const algorandNodes = [
   },
 ]
 
-const transactionNodes = algorandNodes.filter((node) =>
+const transactionNodes = bchNodes.filter((node) =>
   ["Core", "Transaction", "Logic", "Utility"].includes(node.category),
 )
 
@@ -114,14 +114,14 @@ export function NodeSidebar({ type }: NodeSidebarProps) {
           </h2>
         </div>
         <p className="text-gray-400 text-sm">
-          Create and manage Algorand transactions visually
+          Create and manage Bitcoin Cash transactions visually
         </p>
       </div>
 
       <div className="flex-1 overflow-hidden">
         <div className="p-4 border-b border-gray-700">
           <div className="flex items-center justify-between">
-            <h3 className="text-white text-sm font-semibold">Algorand Nodes</h3>
+            <h3 className="text-white text-sm font-semibold">Bitcoin Cash Nodes</h3>
             <Badge variant="secondary" className="text-xs">
               Transaction
             </Badge>

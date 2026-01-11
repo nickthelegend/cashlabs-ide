@@ -75,7 +75,7 @@ export default function PlaygroundPage() {
           <div className="text-center">
             <h1 className="text-4xl font-bold mb-4">Community Playground</h1>
             <p className="text-lg text-gray-500 dark:text-gray-400">
-              Explore public Algorand smart contract projects created by the community
+              Explore public Bitcoin Cash smart contract projects created by the community
             </p>
           </div>
 
@@ -83,7 +83,7 @@ export default function PlaygroundPage() {
             <div className="text-center py-12">
               <Globe className="w-16 h-16 mx-auto mb-4 text-gray-400" />
               <h3 className="text-lg font-medium mb-2">No public projects yet</h3>
-              <p className="text-gray-600 mb-4">Be the first to share your Algorand project with the community!</p>
+              <p className="text-gray-600 mb-4">Be the first to share your Bitcoin Cash project with the community!</p>
               <Button asChild>
                 <Link href="/">
                   Create Project

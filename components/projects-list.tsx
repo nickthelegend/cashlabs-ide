@@ -86,9 +86,9 @@ export function ProjectsList() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <img 
-            src="/logo.png" 
-            alt="Algorand IDE Logo" 
+          <img
+            src="/logo.png"
+            alt="CashLabs Logo"
             className="w-8 h-8 object-contain"
           />
           <h2 className="text-2xl font-bold">My Projects</h2>
@@ -104,7 +104,7 @@ export function ProjectsList() {
       {projects.length === 0 ? (
         <div className="text-center py-12">
           <h3 className="text-lg font-medium mb-2">No projects yet</h3>
-          <p className="text-gray-600 mb-4">Create your first Algorand smart contract project</p>
+          <p className="text-gray-600 mb-4">Create your first Bitcoin Cash smart contract project</p>
           <Button asChild>
             <Link href="/">
               <Plus className="w-4 h-4 mr-2" />

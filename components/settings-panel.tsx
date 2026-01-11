@@ -62,7 +62,7 @@ export function SettingsPanel() {
   useEffect(() => {
     // Load theme from localStorage on mount
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
-      const savedTheme = localStorage.getItem("algorand-ide-theme");
+      const savedTheme = localStorage.getItem("cashlabs-theme");
       if (savedTheme) {
         setSelectedTheme(savedTheme);
         applyTheme(savedTheme);
@@ -91,7 +91,7 @@ export function SettingsPanel() {
     setSelectedTheme(newThemeId);
     applyTheme(newThemeId);
     if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
-      localStorage.setItem("algorand-ide-theme", newThemeId);
+      localStorage.setItem("cashlabs-theme", newThemeId);
     }
   };
 
