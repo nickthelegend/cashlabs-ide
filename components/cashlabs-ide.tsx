@@ -341,79 +341,115 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     }
   };
 
-  const handleTealScriptBuild = async () => {
+  const handleCashScriptBuild = async () => {
     setIsBuilding(true);
-    handleTerminalOutput("Compiling TealScript contract...");
+    handleTerminalOutput("🔨 Compiling CashScript contracts...");
 
     try {
-      const algoFiles = Object.keys(fileContents).filter(path => path.endsWith('.algo.ts'));
+      // Find all .cash files
+      const cashFiles = Object.keys(fileContents).filter(path => path.endsWith('.cash'));
 
-      if (algoFiles.length === 0) {
-        handleTerminalOutput("No .algo.ts files found.");
+      if (cashFiles.length === 0) {
+        handleTerminalOutput("❌ No .cash files found. Create a contract file ending in .cash");
         return;
       }
 
-      for (const filePath of algoFiles) {
-        const filename = filePath.split('/').pop();
-        const code = fileContents[filePath];
+      handleTerminalOutput(`📁 Found ${cashFiles.length} CashScript file(s)`);
 
-        handleTerminalOutput(`Compiling ${filename}...`);
-        console.log(`[BUILD] TealScript compilation started for ${filename}`);
+      for (const filePath of cashFiles) {
+        const filename = filePath.split('/').pop() || filePath;
+        const sourceCode = fileContents[filePath];
 
-        const response = await fetch('/api/compile', {
+        handleTerminalOutput(`\n📄 Compiling ${filename}...`);
+        console.log(`[CASHSCRIPT] Compilation started for ${filename}`);
+
+        const response = await fetch('/api/cashscript/compile', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            type: 'tealscript',
+            sourceCode,
             filename,
-            code
           })
         });
 
         const result = await response.json();
-        console.log(`[BUILD] TealScript compilation result:`, result);
+        console.log(`[CASHSCRIPT] Compilation result:`, result);
 
-        if (result.ok && result.result) {
+        if (result.ok && result.artifact) {
           const updatedFiles = { ...currentFiles };
           if (!updatedFiles.artifacts) {
             updatedFiles.artifacts = { directory: {} };
           }
 
           const newFileContents = { ...fileContents };
+          const contractName = result.contractName || filename.replace('.cash', '');
 
-          const sections = result.result.split('=== ');
-          for (const section of sections) {
-            if (section.trim()) {
-              const lines = section.split('\n');
-              const fileName = lines[0].replace(' ===', '').trim();
-              const content = lines.slice(1).join('\n').trim();
+          // Save artifact JSON
+          const artifactFilename = `${contractName}.json`;
+          const artifactContent = JSON.stringify(result.artifact, null, 2);
 
-              if (fileName && content) {
-                updatedFiles.artifacts.directory[fileName] = {
-                  file: { contents: content }
-                };
+          updatedFiles.artifacts.directory[artifactFilename] = {
+            file: { contents: artifactContent }
+          };
+          newFileContents[`artifacts/${artifactFilename}`] = artifactContent;
 
-                newFileContents[`artifacts/${fileName}`] = content;
-              }
-            }
-          }
+          // Also save constructor info for easy reference
+          const infoFilename = `${contractName}.info.txt`;
+          const infoContent = [
+            `Contract: ${contractName}`,
+            ``,
+            `Constructor Inputs:`,
+            ...result.constructorInputs.map((input: any, i: number) =>
+              `  ${i + 1}. ${input.name}: ${input.type}`
+            ),
+            ``,
+            `Functions:`,
+            ...result.abi.map((fn: any) =>
+              `  - ${fn.name}(${fn.inputs.map((i: any) => `${i.name}: ${i.type}`).join(', ')})`
+            ),
+            ``,
+            `Bytecode Size: ${result.bytesize} opcodes`,
+            ``,
+            `Bytecode (ASM):`,
+            result.bytecode,
+          ].join('\n');
+
+          updatedFiles.artifacts.directory[infoFilename] = {
+            file: { contents: infoContent }
+          };
+          newFileContents[`artifacts/${infoFilename}`] = infoContent;
 
           setCurrentFiles(updatedFiles);
           setFileContents(newFileContents);
-          handleTerminalOutput(`Successfully compiled ${filename}`);
+
+          handleTerminalOutput(`✅ Successfully compiled ${filename}`);
+          handleTerminalOutput(`   Contract: ${contractName}`);
+          handleTerminalOutput(`   Constructor args: ${result.constructorInputs.length}`);
+          handleTerminalOutput(`   Functions: ${result.abi.map((f: any) => f.name).join(', ')}`);
+          handleTerminalOutput(`   Bytecode size: ${result.bytesize} opcodes`);
+          handleTerminalOutput(`   Artifact saved to: artifacts/${artifactFilename}`);
         } else {
-          handleTerminalOutput(`Failed to compile ${filename}: ${result.error || 'Unknown error'}`);
+          handleTerminalOutput(`❌ Failed to compile ${filename}`);
+          handleTerminalOutput(`   Error: ${result.error || 'Unknown error'}`);
+          if (result.details) {
+            handleTerminalOutput(`   Details: ${result.details}`);
+          }
         }
       }
+
+      handleTerminalOutput(`\n🎉 Compilation complete!`);
     } catch (error: any) {
-      console.error('[BUILD] TealScript build error:', error);
-      handleTerminalOutput(`Build failed: ${error.message || error}`);
+      console.error('[CASHSCRIPT] Build error:', error);
+      handleTerminalOutput(`❌ Build failed: ${error.message || error}`);
     } finally {
       setIsBuilding(false);
     }
   };
+
+  // Keep legacy function name for backwards compatibility
+  const handleTealScriptBuild = handleCashScriptBuild;
 
   const handlePuyaPyBuild = async () => {
     setIsBuilding(true);

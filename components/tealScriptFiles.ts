@@ -9,7 +9,7 @@ export const tealScriptFiles = {
     directory: {
       "Helloworld.cash": {
         file: {
-          contents: `pragma cashscript ^0.9.0;
+          contents: `pragma cashscript ^0.12.0;
 
 /**
  * Hello World Contract
@@ -26,7 +26,7 @@ contract Helloworld(string greeting) {
       },
       "TransferWithTimeout.cash": {
         file: {
-          contents: `pragma cashscript ^0.9.0;
+          contents: `pragma cashscript ^0.12.0;
 
 /**
  * Transfer With Timeout
@@ -49,7 +49,7 @@ contract TransferWithTimeout(pubkey sender, pubkey receiver, int timeout) {
       },
       "Escrow.cash": {
         file: {
-          contents: `pragma cashscript ^0.9.0;
+          contents: `pragma cashscript ^0.12.0;
 
 /**
  * Escrow Contract
@@ -67,7 +67,7 @@ contract Escrow(pubkey arbiter, pubkey buyer, pubkey seller) {
       },
       "P2PKH.cash": {
         file: {
-          contents: `pragma cashscript ^0.9.0;
+          contents: `pragma cashscript ^0.12.0;
 
 /**
  * Pay to Public Key Hash (P2PKH)
@@ -84,7 +84,7 @@ contract P2PKH(bytes20 pkh) {
       },
       "Announcement.cash": {
         file: {
-          contents: `pragma cashscript ^0.9.0;
+          contents: `pragma cashscript ^0.12.0;
 
 /**
  * Announcement Contract
@@ -102,7 +102,7 @@ contract Announcement() {
       },
       "Vault.cash": {
         file: {
-          contents: `pragma cashscript ^0.9.0;
+          contents: `pragma cashscript ^0.12.0;
 
 /**
  * Vault Contract
@@ -125,7 +125,7 @@ contract Vault(pubkey owner, pubkey recoverer, int lockTime) {
       },
       "Mecenas.cash": {
         file: {
-          contents: `pragma cashscript ^0.9.0;
+          contents: `pragma cashscript ^0.12.0;
 
 /**
  * Mecenas (Patreon-style) Contract

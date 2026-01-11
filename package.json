@@ -47,6 +47,7 @@
     "@xyflow/react": "^12.8.2",
     "algosdk": "latest",
     "autoprefixer": "^10.4.20",
+    "cashc": "^0.12.1",
     "cashscript": "^0.12.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
