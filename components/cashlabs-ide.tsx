@@ -177,6 +177,13 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
   const handleTerminalOutput = useCallback((data: string) => {
     setTerminalOutput((prev) => [...prev, `[${new Date().toLocaleTimeString()}] ${data}`]);
+    // Auto-scroll to bottom
+    const terminalElement = document.getElementById('terminal-output-container');
+    if (terminalElement) {
+      setTimeout(() => {
+        terminalElement.scrollTop = terminalElement.scrollHeight;
+      }, 10);
+    }
   }, []);
 
   const createWallet = async () => {
@@ -343,106 +350,102 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
   const handleCashScriptBuild = async () => {
     setIsBuilding(true);
-    handleTerminalOutput("🔨 Compiling CashScript contracts...");
+    setTerminalOutput([]); // Clear previous output
+    handleTerminalOutput("🚀 Initializing CashScript Build System...");
+    handleTerminalOutput("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     try {
-      // Find all .cash files
-      const cashFiles = Object.keys(fileContents).filter(path => path.endsWith('.cash'));
+      // Small delay to ensure state is settled
+      await new Promise(resolve => setTimeout(resolve, 50));
 
+      const cashFiles = Object.keys(fileContents)
+        .filter(path => path.toLowerCase().endsWith('.cash'));
+
+      handleTerminalOutput(`📁 Found ${cashFiles.length} source file(s)`);
       if (cashFiles.length === 0) {
-        handleTerminalOutput("❌ No .cash files found. Create a contract file ending in .cash");
+        handleTerminalOutput("❌ No .cash files found!");
+        handleTerminalOutput("💡 Tip: Files should end with .cash (e.g., contracts/mycontract.cash)");
+        setIsBuilding(false);
         return;
       }
 
-      handleTerminalOutput(`📁 Found ${cashFiles.length} CashScript file(s)`);
+      // 2. COMPILATION PHASE
+      handleTerminalOutput("🔨 Compiling contracts...");
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      // Deep clone currentFiles to avoid mutating state directly
+      const updatedFiles = JSON.parse(JSON.stringify(currentFiles));
+      if (!updatedFiles.artifacts) updatedFiles.artifacts = { directory: {} };
+      if (!updatedFiles.artifacts.directory) updatedFiles.artifacts.directory = {};
+
+      const newFileContents = { ...fileContents };
 
       for (const filePath of cashFiles) {
         const filename = filePath.split('/').pop() || filePath;
         const sourceCode = fileContents[filePath];
 
-        handleTerminalOutput(`\n📄 Compiling ${filename}...`);
-        console.log(`[CASHSCRIPT] Compilation started for ${filename}`);
+        if (!sourceCode || sourceCode.trim() === '') {
+          handleTerminalOutput(`⚠️  Skipping empty file: ${filename}`);
+          continue;
+        }
 
-        const response = await fetch('/api/cashscript/compile', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            sourceCode,
-            filename,
-          })
-        });
+        handleTerminalOutput(`📄 Processing: ${filename}`);
 
-        const result = await response.json();
-        console.log(`[CASHSCRIPT] Compilation result:`, result);
+        try {
+          const response = await fetch('/api/cashscript/compile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sourceCode, filename })
+          });
 
-        if (result.ok && result.artifact) {
-          const updatedFiles = { ...currentFiles };
-          if (!updatedFiles.artifacts) {
-            updatedFiles.artifacts = { directory: {} };
+          const result = await response.json();
+
+          if (result.ok && result.artifact) {
+            const contractName = result.contractName || filename.replace(/\.cash$/i, '');
+            const artifactFilename = `${contractName}.json`;
+            const infoFilename = `${contractName}.info.txt`;
+            const artifactContent = JSON.stringify(result.artifact, null, 2);
+
+            updatedFiles.artifacts.directory[artifactFilename] = {
+              file: { contents: artifactContent }
+            };
+            newFileContents[`artifacts/${artifactFilename}`] = artifactContent;
+
+            const infoContent = [
+              `Contract: ${contractName}`,
+              `Compiled: ${new Date().toLocaleString()}`,
+              `Bytes: ${result.bytesize} | Ops: ${result.opcount}`,
+              `Functions: ${result.abi?.map((f: any) => f.name).join(', ') || 'none'}`
+            ].join('\n');
+
+            updatedFiles.artifacts.directory[infoFilename] = {
+              file: { contents: infoContent }
+            };
+            newFileContents[`artifacts/${infoFilename}`] = infoContent;
+
+            handleTerminalOutput(`   ✅ Compiled ${contractName}`);
+            successCount++;
+          } else {
+            handleTerminalOutput(`   ❌ Error compiling ${filename}: ${result.error || 'Unknown'}`);
+            errorCount++;
           }
-
-          const newFileContents = { ...fileContents };
-          const contractName = result.contractName || filename.replace('.cash', '');
-
-          // Save artifact JSON
-          const artifactFilename = `${contractName}.json`;
-          const artifactContent = JSON.stringify(result.artifact, null, 2);
-
-          updatedFiles.artifacts.directory[artifactFilename] = {
-            file: { contents: artifactContent }
-          };
-          newFileContents[`artifacts/${artifactFilename}`] = artifactContent;
-
-          // Also save constructor info for easy reference
-          const infoFilename = `${contractName}.info.txt`;
-          const infoContent = [
-            `Contract: ${contractName}`,
-            ``,
-            `Constructor Inputs:`,
-            ...result.constructorInputs.map((input: any, i: number) =>
-              `  ${i + 1}. ${input.name}: ${input.type}`
-            ),
-            ``,
-            `Functions:`,
-            ...result.abi.map((fn: any) =>
-              `  - ${fn.name}(${fn.inputs.map((i: any) => `${i.name}: ${i.type}`).join(', ')})`
-            ),
-            ``,
-            `Bytecode Size: ${result.bytesize} opcodes`,
-            ``,
-            `Bytecode (ASM):`,
-            result.bytecode,
-          ].join('\n');
-
-          updatedFiles.artifacts.directory[infoFilename] = {
-            file: { contents: infoContent }
-          };
-          newFileContents[`artifacts/${infoFilename}`] = infoContent;
-
-          setCurrentFiles(updatedFiles);
-          setFileContents(newFileContents);
-
-          handleTerminalOutput(`✅ Successfully compiled ${filename}`);
-          handleTerminalOutput(`   Contract: ${contractName}`);
-          handleTerminalOutput(`   Constructor args: ${result.constructorInputs.length}`);
-          handleTerminalOutput(`   Functions: ${result.abi.map((f: any) => f.name).join(', ')}`);
-          handleTerminalOutput(`   Bytecode size: ${result.bytesize} opcodes`);
-          handleTerminalOutput(`   Artifact saved to: artifacts/${artifactFilename}`);
-        } else {
-          handleTerminalOutput(`❌ Failed to compile ${filename}`);
-          handleTerminalOutput(`   Error: ${result.error || 'Unknown error'}`);
-          if (result.details) {
-            handleTerminalOutput(`   Details: ${result.details}`);
-          }
+        } catch (err: any) {
+          handleTerminalOutput(`   ❌ Network Error: ${err.message}`);
+          errorCount++;
         }
       }
 
-      handleTerminalOutput(`\n🎉 Compilation complete!`);
+      setCurrentFiles(updatedFiles);
+      setFileContents(newFileContents);
+
+      handleTerminalOutput("");
+      handleTerminalOutput("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+      handleTerminalOutput(`🎉 Build Finished: ${successCount} success, ${errorCount} errors`);
+
     } catch (error: any) {
-      console.error('[CASHSCRIPT] Build error:', error);
-      handleTerminalOutput(`❌ Build failed: ${error.message || error}`);
+      handleTerminalOutput(`🛑 Critical error: ${error.message || error}`);
     } finally {
       setIsBuilding(false);
     }
@@ -701,105 +704,97 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     }
   }
 
-  const executeDeploy = async (filename: string, args: (string | number)[]) => {
+  const executeDeploy = async (filename: string, args: any[]) => {
     setIsDeploying(true);
     setDeployStatus('deploying');
-    console.log(`executeDeploy called for ${filename} with args:`, args);
+    console.log(`[DEPLOY] Starting deployment for ${filename} with args:`, args);
+    handleTerminalOutput(`\n🚀 Deploying contract: ${filename}`);
+
     try {
       const artifactPath = `artifacts/${filename}`;
-      const fileContent = fileContents[artifactPath] || '';
+      const fileContent = fileContents[artifactPath] || fileContents[filename] || '';
       if (!fileContent) {
         throw new Error(`Artifact file ${filename} not found`);
       }
 
-      const appSpec = JSON.parse(fileContent);
-
-      let contractSpec = appSpec;
-      if (filename.endsWith('.arc32.json') && appSpec.contract) {
-        contractSpec = appSpec.contract;
-      }
+      const artifact = JSON.parse(fileContent);
 
       if (!wallet) {
-        throw new Error("Wallet not connected");
+        throw new Error("Wallet not connected. Please create a wallet first.");
       }
-      handleTerminalOutput("Smart contract deployment for Bitcoin Cash is being integrated.");
-      return;
-      /*
-      const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
-      const creator = wallet;
 
-      const { AlgorandClient } = await import("@algorandfoundation/algokit-utils");
-      const algorandClient = AlgorandClient.fromConfig({
-        algodConfig: { server: "https://rest.mainnet.cash", token: "" },
-        indexerConfig: { server: "https://rest.mainnet.cash", token: "" },
-      });
+      // Check for CashScript artifact
+      if (artifact.contractName && artifact.bytecode && artifact.abi) {
+        handleTerminalOutput(`📋 Contract: ${artifact.contractName}`);
+        handleTerminalOutput(`📍 Constructor args required: ${artifact.constructorInputs.length}`);
 
-      const appFactory = algorandClient.client.getAppFactory({
-        appSpec,
-        defaultSender: creator.address,
-        defaultSigner: algosdk.makeBasicAccountTransactionSigner(account)
-      });
+        // Import CashScript SDK dynamically
+        const { Contract, ElectrumNetworkProvider } = await import('cashscript');
 
-      const hasBareCreate = appSpec.bare_call_config?.no_op === 'CREATE';
-      const hasCreateMethod = appSpec.hints?.['createApplication()void'];
+        // Create network provider
+        const provider = new ElectrumNetworkProvider('chipnet');
+        handleTerminalOutput(`🌐 Network: chipnet (testnet)`);
 
-      let deployResult;
-      if (hasBareCreate) {
-        deployResult = await (appFactory.send as any).bare.create({
-          sender: account.addr,
-          signer: algosdk.makeBasicAccountTransactionSigner(account)
+        // Create contract instance with provided args
+        const contract = new Contract(artifact, args, { provider });
+
+        const address = contract.address;
+        const tokenAddress = contract.tokenAddress;
+        const bytesize = contract.bytesize;
+        const opcount = contract.opcount;
+
+        handleTerminalOutput(`\n✅ Contract deployed successfully!`);
+        handleTerminalOutput(`   Address: ${address}`);
+        handleTerminalOutput(`   Token Address: ${tokenAddress}`);
+        handleTerminalOutput(`   Size: ${bytesize} bytes, ${opcount} opcodes`);
+
+        // Get initial balance
+        const balance = await contract.getBalance();
+        handleTerminalOutput(`   Balance: ${balance} satoshis`);
+
+        // Save deployed contract info
+        const deployed = {
+          contractName: artifact.contractName,
+          address,
+          tokenAddress,
+          artifact: filename,
+          args,
+          time: Date.now(),
+          functions: artifact.abi.map((fn: any) => fn.name),
+          bytesize,
+          opcount,
+        };
+
+        const prevData = (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function')
+          ? localStorage.getItem("deployedContracts")
+          : "[]";
+        const prev = JSON.parse(prevData || "[]");
+        const updated = [deployed, ...prev];
+        if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+          localStorage.setItem("deployedContracts", JSON.stringify(updated));
+        }
+        setDeployedContracts(updated);
+        setDeployedAppId(address);
+        setDeployStatus('success');
+
+        toast({
+          title: "✅ Contract Deployed!",
+          description: `${artifact.contractName} deployed to ${address.substring(0, 20)}...`,
+          duration: 5000
         });
-      } else if (hasCreateMethod) {
-        deployResult = await appFactory.send.create({
-          method: 'createApplication',
-          methodArgs: args,
-          sender: account.addr,
-          signer: algosdk.makeBasicAccountTransactionSigner(account)
-        } as any);
-      } else {
-        throw new Error('Contract has no CREATE handler (bare or ABI)');
-      }
-      */
 
-      /*
-      console.log("Deploy result:", deployResult);
-      let appId = 'unknown';
-      let txId = 'unknown';
-      if (deployResult?.result) {
-        const resultAny = deployResult.result as any;
-        if (resultAny.appId !== undefined && resultAny.appId !== null) {
-          appId = String(resultAny.appId);
-        }
-        if (typeof resultAny.txId === 'string') {
-          txId = resultAny.txId;
-        } else if (typeof resultAny.transactionId === 'string') {
-          txId = resultAny.transactionId;
-        }
+        handleTerminalOutput(`\n📝 To interact with this contract:`);
+        handleTerminalOutput(`   1. Send BCH to: ${address}`);
+        handleTerminalOutput(`   2. Use the SDK to call contract functions`);
+        handleTerminalOutput(`   Available functions: ${artifact.abi.map((f: any) => f.name).join(', ')}`);
+
+      } else {
+        throw new Error("Invalid artifact format. Expected CashScript artifact with contractName, bytecode, and abi.");
       }
-      console.log("Extracted App ID:", appId, "Transaction ID:", txId);
-      */
-      /*
-      const deployed = {
-        appId,
-        txId,
-        artifact: filename,
-        time: Date.now(),
-        methods: contractSpec.methods,
-      };
-      const prevData = (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function')
-        ? localStorage.getItem("deployedContracts")
-        : "[]";
-      const prev = JSON.parse(prevData || "[]");
-      const updated = [deployed, ...prev];
-      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
-        localStorage.setItem("deployedContracts", JSON.stringify(updated));
-      }
-      setDeployedContracts(updated);
-      setDeployedAppId(deployed.appId);
-      setDeployStatus('success');
-      */
+
     } catch (error: any) {
-      console.error("Deploy artifact failed:", error);
+      console.error("[DEPLOY] Failed:", error);
+      handleTerminalOutput(`\n❌ Deployment failed: ${error.message}`);
       setDeployStatus('error');
       toast({
         title: "❌ Deployment Failed",
@@ -813,49 +808,58 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     }
   };
 
-  const deployArtifact = async (filename: string) => {
-    console.log("deployArtifact called with filename:", filename);
+  const deployArtifact = async (filename: string, passedArtifact?: any) => {
+    console.log("[DEPLOY] deployArtifact called:", filename);
     try {
-      const artifactPath = `artifacts/${filename}`;
-      const fileContent = fileContents[artifactPath] || '';
-      if (!fileContent) {
-        throw new Error(`Artifact file ${filename} not found`);
+      let artifact = passedArtifact;
+
+      if (!artifact) {
+        const artifactPath = `artifacts/${filename}`;
+        const fileContent = fileContents[artifactPath] || fileContents[filename] || '';
+        if (!fileContent) {
+          throw new Error(`Artifact file ${filename} not found`);
+        }
+        artifact = JSON.parse(fileContent);
       }
 
-      const appSpec = JSON.parse(fileContent);
-      console.log("Parsed appSpec:", appSpec);
+      console.log("[DEPLOY] Parsed artifact:", artifact);
 
-      let contractSpec = appSpec;
-      if (filename.endsWith('.arc32.json') && appSpec.contract) {
-        contractSpec = appSpec.contract;
-      }
+      // Check if it's a CashScript artifact
+      if (artifact.contractName && artifact.constructorInputs && artifact.abi) {
+        console.log("[DEPLOY] CashScript artifact detected");
 
-      if (!contractSpec.methods || !Array.isArray(contractSpec.methods)) {
-        console.log("No methods found, deploying without args");
-        await executeDeploy(filename, []);
-        return;
-      }
+        // If no constructor inputs needed, deploy directly
+        if (!artifact.constructorInputs || artifact.constructorInputs.length === 0) {
+          console.log("[DEPLOY] No constructor args needed");
+          await executeDeploy(filename, []);
+          return;
+        }
 
-      const createMethod = contractSpec.methods.find((m: any) =>
-        m && (m.name === "createApplication" || m.actions?.create === true)
-      );
-
-      if (createMethod && createMethod.args && createMethod.args.length > 0) {
+        // Set up constructor args modal
         setCurrentDeployFilename(filename);
-        setContractArgs(createMethod.args);
-        const initialArgs = createMethod.args.map((arg: any) => {
-          const argType = arg?.type || arg?.struct || '';
-          if (typeof argType === 'string' && argType.includes('uint')) return 0;
-          if (argType === 'address') return wallet?.address || '';
+        setContractArgs(artifact.constructorInputs);
+
+        // Initialize args with default values based on type
+        const initialArgs = artifact.constructorInputs.map((input: any) => {
+          const type = input.type || '';
+          if (type === 'int') return 0;
+          if (type === 'bool') return false;
+          if (type === 'pubkey') return wallet?.address ? `<your pubkey>` : '';
+          if (type === 'bytes20') return wallet?.address ? `<pubkey hash>` : '';
+          if (type === 'sig') return '<signature>';
+          if (type.startsWith('bytes')) return '';
           return '';
         });
         setDeployArgs(initialArgs);
         setIsDeployModalOpen(true);
+
       } else {
+        // Legacy format or no args needed
+        console.log("[DEPLOY] Non-CashScript or no args needed");
         await executeDeploy(filename, []);
       }
     } catch (error: any) {
-      console.error("Deploy artifact failed:", error);
+      console.error("[DEPLOY] Failed:", error);
       setDeployStatus('error');
       toast({
         title: "❌ Deployment Failed",
@@ -942,20 +946,20 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       /*
       const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
       const creator = wallet;
-
+  
       const { AlgorandClient } = await import("@algorandfoundation/algokit-utils");
       const algorandClient = AlgorandClient.fromConfig({
         algodConfig: { server: "https://rest.mainnet.cash", token: "" },
         indexerConfig: { server: "https://rest.mainnet.cash", token: "" },
       });
-
+  
       const appClient = algorandClient.client.getAppClientById({
         appSpec,
         appId: BigInt(selectedContract.appId),
         defaultSender: creator.address,
         defaultSigner: algosdk.makeBasicAccountTransactionSigner(account)
       });
-
+  
       const result = await appClient.send.call({
         method: selectedMethod.name,
         args: executeArgs,
@@ -964,7 +968,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         populateAppCallResources: true,
         staticFee: (2_000).microAlgo(),
       })
-
+  
       toast({ title: "Method executed successfully!", description: `Result: ${result.return}` });
       */
     } catch (error: any) {
@@ -1061,7 +1065,6 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                   {activeArtifactFile ? (
                     <ArtifactFileViewerPanel
                       filePath={activeArtifactFile}
-                      webcontainer={null}
                       fileContents={fileContents}
                       selectedTemplate={selectedTemplate}
                       onDeploy={deployArtifact}
@@ -1334,10 +1337,23 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
               <>
                 <div className="text-6xl mb-4">🎉</div>
                 <p className="text-lg font-medium mb-2">Contract Deployed!</p>
-                <p className="text-sm text-muted-foreground mb-4">App ID: {deployedAppId}</p>
+                <p className="text-sm text-muted-foreground mb-2">Contract Address:</p>
+                <p className="text-xs font-mono bg-[#1e1e1e] px-3 py-2 rounded break-all mb-4">{deployedAppId}</p>
                 <Button
                   onClick={() => {
-                    window.open(`https://blockdozer.com/app/${deployedAppId}`, '_blank');
+                    // Copy address to clipboard
+                    navigator.clipboard.writeText(deployedAppId || '');
+                  }}
+                  variant="outline"
+                  className="w-full mb-2"
+                >
+                  Copy Address
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Open BCH explorer
+                    const explorerUrl = `https://chipnet.chaingraph.cash/address/${deployedAppId}`;
+                    window.open(explorerUrl, '_blank');
                     setDeployStatus(null);
                   }}
                   className="w-full"

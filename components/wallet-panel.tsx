@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { X, Send, RefreshCw, ExternalLink, Copy, Loader2, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
+import QRCode from "react-qr-code"
 
 interface Transaction {
   id: string
@@ -437,11 +438,15 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
 
           {/* QR Code */}
           <div className="flex flex-col items-center justify-center p-4 bg-white/5 rounded-lg border border-[#3e3e42] mb-6">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${wallet.address}`}
-              alt="Wallet QR Code"
-              className="w-32 h-32 mb-2 rounded"
-            />
+            <div className="w-32 h-32 mb-2 rounded bg-white p-2 flex items-center justify-center">
+              <QRCode
+                value={wallet.address}
+                size={112}
+                level="M"
+                bgColor="#ffffff"
+                fgColor="#000000"
+              />
+            </div>
             <div className="text-[10px] text-[#969696] font-mono break-all text-center px-2">
               {wallet.address}
             </div>

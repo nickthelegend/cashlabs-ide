@@ -5,12 +5,12 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
-import { 
-  Play, 
-  Square, 
-  FileText, 
-  AlertCircle, 
-  CheckCircle, 
+import {
+  Play,
+  Square,
+  FileText,
+  AlertCircle,
+  CheckCircle,
   Clock,
   Download,
   Rocket,
@@ -42,13 +42,13 @@ export function BuildPanel({
 }: BuildPanelProps) {
   const [activeTab, setActiveTab] = useState<"output" | "artifacts">("output")
 
-  const hasErrors = buildOutput.some(line => 
-    line.toLowerCase().includes('error') || 
+  const hasErrors = buildOutput.some(line =>
+    line.toLowerCase().includes('error') ||
     line.toLowerCase().includes('failed')
   )
 
-  const hasWarnings = buildOutput.some(line => 
-    line.toLowerCase().includes('warning') || 
+  const hasWarnings = buildOutput.some(line =>
+    line.toLowerCase().includes('warning') ||
     line.toLowerCase().includes('warn')
   )
 
@@ -159,7 +159,7 @@ export function BuildPanel({
             <span className="text-sm text-gray-500">Ready to Build</span>
           </>
         )}
-        
+
         {hasWarnings && (
           <Badge variant="outline" className="text-xs text-yellow-500 border-yellow-500">
             Warnings
@@ -171,22 +171,20 @@ export function BuildPanel({
       <div className="flex border-b border-[#3e3e42]">
         <button
           onClick={() => setActiveTab("output")}
-          className={`px-3 py-2 text-xs font-medium transition-colors ${
-            activeTab === "output"
-              ? "bg-[#1e1e1e] text-white border-b-2 border-[#0e639c]"
-              : "bg-[#2d2d30] text-[#cccccc] hover:bg-[#37373d]"
-          }`}
+          className={`px-3 py-2 text-xs font-medium transition-colors ${activeTab === "output"
+            ? "bg-[#1e1e1e] text-white border-b-2 border-[#0e639c]"
+            : "bg-[#2d2d30] text-[#cccccc] hover:bg-[#37373d]"
+            }`}
         >
           <FileText className="w-3 h-3 mr-1 inline" />
           Output ({buildOutput.length})
         </button>
         <button
           onClick={() => setActiveTab("artifacts")}
-          className={`px-3 py-2 text-xs font-medium transition-colors ${
-            activeTab === "artifacts"
-              ? "bg-[#1e1e1e] text-white border-b-2 border-[#0e639c]"
-              : "bg-[#2d2d30] text-[#cccccc] hover:bg-[#37373d]"
-          }`}
+          className={`px-3 py-2 text-xs font-medium transition-colors ${activeTab === "artifacts"
+            ? "bg-[#1e1e1e] text-white border-b-2 border-[#0e639c]"
+            : "bg-[#2d2d30] text-[#cccccc] hover:bg-[#37373d]"
+            }`}
         >
           <FileText className="w-3 h-3 mr-1 inline" />
           Artifacts ({artifacts.length})
@@ -194,9 +192,9 @@ export function BuildPanel({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         {activeTab === "output" ? (
-          <ScrollArea className="h-full">
+          <div id="terminal-output-container" className="h-full overflow-y-auto">
             <div className="p-3">
               {buildOutput.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
@@ -209,15 +207,16 @@ export function BuildPanel({
                   {buildOutput.map((line, index) => (
                     <div
                       key={index}
-                      className={`text-xs font-mono p-1 rounded ${
-                        line.toLowerCase().includes('error') || line.toLowerCase().includes('failed')
-                          ? "text-red-400 bg-red-900/20"
-                          : line.toLowerCase().includes('warning') || line.toLowerCase().includes('warn')
+                      className={`text-xs font-mono p-1 rounded whitespace-pre-wrap break-all ${line.toLowerCase().includes('error') || line.toLowerCase().includes('failed') || line.includes('❌')
+                        ? "text-red-400 bg-red-900/20"
+                        : line.toLowerCase().includes('warning') || line.toLowerCase().includes('warn')
                           ? "text-yellow-400 bg-yellow-900/20"
-                          : line.toLowerCase().includes('success') || line.toLowerCase().includes('completed')
-                          ? "text-green-400 bg-green-900/20"
-                          : "text-gray-300"
-                      }`}
+                          : line.toLowerCase().includes('success') || line.includes('✅') || line.includes('🎉')
+                            ? "text-green-400 bg-green-900/20"
+                            : line.includes('📄') || line.includes('📁') || line.includes('🔨')
+                              ? "text-blue-400"
+                              : "text-gray-300"
+                        }`}
                     >
                       {line}
                     </div>
@@ -225,7 +224,7 @@ export function BuildPanel({
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
         ) : (
           <ScrollArea className="h-full">
             <div className="p-3">
