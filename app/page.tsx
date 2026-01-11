@@ -9,10 +9,9 @@ import { ProjectsList } from "@/components/projects-list";
 
 export default function HomePage() {
   const templates = [
-    { name: "CashScript", description: "Standard Smart Contracts for Bitcoin Cash", link: "/tealscript" },
-    { name: "Mainnet-js", description: "Node.js SDK for Bitcoin Cash applications", link: "/puyapy" },
-    { name: "Libauth", description: "Low-level cryptographic library for Bitcoin Cash", link: "/puyats" },
-    { name: "Advanced CashScript", description: "Complex Smart Contracts & Covenants", link: "/pyteal" },
+    { name: "CashScript", description: "Standard Smart Contracts for Bitcoin Cash", link: "/cashscript" },
+    { name: "Mainnet-js", description: "Node.js SDK for Bitcoin Cash applications", link: "/mainnet-js" },
+    { name: "Libauth", description: "Low-level cryptographic library for Bitcoin Cash", link: "/libauth" },
   ];
 
   return (
@@ -24,7 +23,7 @@ export default function HomePage() {
         <div className="flex items-center justify-center space-x-1">
           <Image
             src="/logo.png"
-            alt="Algorand IDE Logo"
+            alt="CashLabs IDE Logo"
             width={80}
             height={80}
             className="object-contain p-2"
@@ -40,7 +39,7 @@ export default function HomePage() {
 
       <div className="mt-10 flex flex-wrap justify-center gap-8">
         {templates.map((template) => (
-          <Card key={template.name} className="flex flex-col justify-between" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
+          <Card key={template.name} className="flex flex-col justify-between w-[300px]" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 {template.name}
@@ -61,7 +60,7 @@ export default function HomePage() {
             </CardContent>
           </Card>
         ))}
-        <Card className="flex flex-col justify-between col-span-full sm:col-span-2 lg:col-span-1 self-end hover:scale-105 transition-transform duration-300 ease-in-out shadow-lg shadow-green-500/50" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
+        <Card className="flex flex-col justify-between w-[300px] hover:scale-105 transition-transform duration-300 ease-in-out shadow-lg shadow-green-500/50" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Play className="h-5 w-5" />
@@ -77,23 +76,7 @@ export default function HomePage() {
             </Link>
           </CardContent>
         </Card>
-        <Card className="flex flex-col justify-between col-span-full sm:col-span-2 lg:col-span-1 self-end hover:scale-105 transition-transform duration-300 ease-in-out shadow-lg shadow-blue-500/50" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Play className="h-5 w-5" />
-              Playground
-            </CardTitle>
-            <CardDescription>Explore public projects from the community</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/playground" passHref>
-              <Button className="w-full" style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}>
-                Explore Playground
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-        <Card className="flex flex-col justify-between col-span-full sm:col-span-2 lg:col-span-1 self-end hover:scale-105 transition-transform duration-300 ease-in-out shadow-lg shadow-blue-500/50" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
+        <Card className="flex flex-col justify-between w-[300px] hover:scale-105 transition-transform duration-300 ease-in-out shadow-lg shadow-blue-500/50" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Play className="h-5 w-5" />

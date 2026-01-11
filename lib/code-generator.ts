@@ -4,10 +4,10 @@ export const generateCode = (nodes: Node[], edges: Edge[]): string => {
   if (nodes.length === 0) {
     return `// No nodes found in the flow. Add nodes to generate code.`;
   }
-  let code = `import { DefaultWallet } from 'mainnet-js';\n\n`;
+  let code = `import { TestNetWallet } from 'mainnet-js';\n\n`;
   code += `// Bitcoin Cash network configuration\n`;
-  code += `// Use 'chipnet' for testnet, 'mainnet' for production\n`;
-  code += `const network = 'chipnet';\n\n`;
+  code += `// Using TestNetWallet for chipnet/testnet\n`;
+  code += `// For mainnet, use: import { Wallet } from 'mainnet-js';\n\n`;
 
   // Generate account setups
   let storedMnemonic = "";
@@ -29,7 +29,7 @@ export const generateCode = (nodes: Node[], edges: Edge[]): string => {
   accountNodes.forEach(node => {
     const mnemonic = (node.data as any).config?.mnemonic || storedMnemonic || "PASTE YOUR MNEMONIC HERE";
     code += `// Wallet from node: ${(node.data as any).label || 'Account'}\n`;
-    code += `const wallet_${node.id.replace(/-/g, '_')} = await DefaultWallet.fromMnemonic("${mnemonic}", { network });\n`;
+    code += `const wallet_${node.id.replace(/-/g, '_')} = await TestNetWallet.fromSeed("${mnemonic}");\n`;
   });
   code += '\n';
 

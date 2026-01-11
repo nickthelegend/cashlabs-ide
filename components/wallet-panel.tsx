@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { X, Send, RefreshCw, ExternalLink, Copy, Loader2, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
 
 interface Transaction {
   id: string
@@ -36,15 +37,38 @@ interface WalletPanelProps {
 }
 
 export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
+  const { toast } = useToast()
   const [sendAmount, setSendAmount] = useState("")
   const [sendAddress, setSendAddress] = useState("")
-  const [bchPrice, setBchPrice] = useState(wallet?.algoPrice || 0)
+  const [opReturnMessage, setOpReturnMessage] = useState("")
+  const [bchPrice, setBchPrice] = useState(0)
   const [realBalance, setRealBalance] = useState<number | null>(null)
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet')
+
+  const handleFaucet = async () => {
+    if (!wallet?.address) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const { TestNetWallet } = (await import("mainnet-js")) as any
+      const w = await TestNetWallet.fromWIF(wallet.privateKey)
+      const txId = await w.getTestnetSatoshis()
+      toast({
+        title: "Faucet Success",
+        description: `Successfully requested test BCH. TxID: ${txId}`,
+      })
+      setTimeout(refreshData, 2000)
+    } catch (error) {
+      console.error("Faucet error:", error)
+      setError("Faucet error: " + (error instanceof Error ? error.message : String(error)))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Algorand Network URLs
   const NETWORK_CONFIG = {
@@ -61,6 +85,30 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
   }
 
   const currentNetwork = NETWORK_CONFIG[network]
+
+  const handleSendOpReturn = async () => {
+    if (!wallet?.address || !opReturnMessage) return
+    setIsLoading(true)
+    setError(null)
+    try {
+      const { TestNetWallet, OpReturnData } = (await import("mainnet-js")) as any
+      const w = await TestNetWallet.fromWIF(wallet.privateKey)
+      const txData = await w.send([
+        OpReturnData.from(opReturnMessage)
+      ])
+      toast({
+        title: "OP_RETURN Sent",
+        description: `Message sent. TxID: ${txData.txId}`,
+      })
+      setOpReturnMessage("")
+      setTimeout(refreshData, 2000)
+    } catch (error) {
+      console.error("OP_RETURN error:", error)
+      setError("OP_RETURN error: " + (error instanceof Error ? error.message : String(error)))
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const fetchBchPrice = async () => {
     try {
@@ -81,8 +129,8 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
     setError(null)
 
     try {
-      const { DefaultWallet } = await import("mainnet-js")
-      const w = await DefaultWallet.watchOnly(wallet.address)
+      const { TestNetWallet } = (await import("mainnet-js")) as any
+      const w = await TestNetWallet.watchOnly(wallet.address)
       const balance = await w.getBalance()
 
       setRealBalance(Number(balance.sat))
@@ -185,8 +233,46 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
     }
   }
 
-  const balanceInAlgo = (realBalance !== null ? realBalance : wallet.balance) / 1000000
-  const balanceInUSD = balanceInAlgo * algoPrice
+  const [isSendOpen, setIsSendOpen] = useState(false)
+
+  const handleSend = async () => {
+    if (!wallet?.address || !sendAmount || !sendAddress) return
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      const { TestNetWallet } = (await import("mainnet-js")) as any
+      const w = await TestNetWallet.fromWIF(wallet.privateKey)
+
+      const txData = await w.send([
+        {
+          cashaddr: sendAddress,
+          value: Number(sendAmount),
+          unit: 'bch',
+        }
+      ]);
+
+      if (txData.txId) {
+        toast({
+          title: "Success",
+          description: `Sent ${sendAmount} BCH. TxID: ${txData.txId}`,
+        })
+        setIsSendOpen(false)
+        setSendAmount("")
+        setSendAddress("")
+        refreshData()
+      }
+    } catch (error) {
+      console.error("Error sending BCH:", error)
+      setError(error instanceof Error ? error.message : "Failed to send BCH")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const balanceInBch = (realBalance !== null ? realBalance : wallet.balance) / 100000000
+  const balanceInUSD = balanceInBch * bchPrice
 
   return (
     <div className="h-full bg-[#252526] flex flex-col">
@@ -212,7 +298,7 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
         {/* Wallet Info */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-purple-500 rounded"></div>
+            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-500 rounded"></div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium">Bitcoin Cash Wallet</div>
               <div className="text-xs text-[#969696] flex items-center gap-1">
@@ -234,9 +320,9 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold">{balanceInAlgo.toFixed(6)} BCH</div>
-                {algoPrice > 0 && <div className="text-sm text-[#969696]">${balanceInUSD.toFixed(2)} USD</div>}
-                {algoPrice > 0 && <div className="text-xs text-[#969696]">1 BCH = ${algoPrice.toFixed(4)}</div>}
+                <div className="text-2xl font-bold">{balanceInBch.toFixed(8)} BCH</div>
+                {bchPrice > 0 && <div className="text-sm text-[#969696]">${balanceInUSD.toFixed(2)} USD</div>}
+                {bchPrice > 0 && <div className="text-xs text-[#969696]">1 BCH = ${bchPrice.toFixed(2)}</div>}
                 {realBalance !== null && (
                   <div className="text-xs text-green-400 mt-1">✓ Live data</div>
                 )}
@@ -246,31 +332,116 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
               </>
             )}
             {error && (
-              <div className="text-xs text-red-400 mt-1">{error}</div>
+              <div className="text-xs text-red-500 mt-1 bg-red-500/10 p-2 rounded whitespace-pre-wrap">{error}</div>
             )}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-2 mb-4">
-            <Button className="flex-1 bg-[#0e639c] hover:bg-[#1177bb]">
-              <Send className="w-4 h-4 mr-2" />
-              Send
-            </Button>
+          <div className="flex flex-col gap-2 mb-4">
+            {isSendOpen ? (
+              <div className="space-y-2 p-3 bg-[#1e1e1e] rounded border border-[#3e3e42]">
+                <div className="space-y-1">
+                  <label className="text-[10px] text-[#969696] uppercase">Recipient Address</label>
+                  <input
+                    className="w-full bg-[#2d2d30] border border-[#3e3e42] rounded px-2 py-1 text-xs text-white"
+                    placeholder="Enter BCH address..."
+                    value={sendAddress}
+                    onChange={(e) => setSendAddress(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] text-[#969696] uppercase">Amount (BCH)</label>
+                  <input
+                    className="w-full bg-[#2d2d30] border border-[#3e3e42] rounded px-2 py-1 text-xs text-white"
+                    type="number"
+                    placeholder="0.00"
+                    value={sendAmount}
+                    onChange={(e) => setSendAmount(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-xs h-8"
+                    onClick={handleSend}
+                    disabled={isLoading || !sendAddress || !sendAmount}
+                  >
+                    Confirm Send
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="text-xs h-8"
+                    onClick={() => setIsSendOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 bg-green-600 hover:bg-green-700 h-9"
+                  onClick={() => setIsSendOpen(true)}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Send
+                </Button>
+                {network === 'testnet' && (
+                  <Button
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 h-9"
+                    onClick={handleFaucet}
+                    disabled={isLoading}
+                  >
+                    Faucet
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  className="border-[#3e3e42] text-[#cccccc] hover:bg-[#37373d] h-9"
+                  onClick={refreshData}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            )}
+
             <Button
               variant="outline"
-              className="border-[#3e3e42] text-[#cccccc] hover:bg-[#37373d]"
-              onClick={refreshData}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 border-[#3e3e42] text-[#cccccc] hover:bg-[#37373d]"
+              className="w-full border-[#3e3e42] text-[#cccccc] hover:bg-[#37373d] h-9"
               onClick={handleBackupAccount}
             >
               <Download className="w-4 h-4 mr-2" />
               Backup Account
+            </Button>
+          </div>
+
+          {/* QR Code */}
+          <div className="flex flex-col items-center justify-center p-4 bg-white/5 rounded-lg border border-[#3e3e42] mb-6">
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${wallet.address}`}
+              alt="Wallet QR Code"
+              className="w-32 h-32 mb-2 rounded"
+            />
+            <div className="text-[10px] text-[#969696] font-mono break-all text-center px-2">
+              {wallet.address}
+            </div>
+          </div>
+
+          {/* OP_RETURN */}
+          <div className="space-y-2 p-3 bg-[#1e1e1e] rounded border border-[#3e3e42] mb-6">
+            <label className="text-[10px] text-[#969696] uppercase font-bold">Store Data (OP_RETURN)</label>
+            <textarea
+              className="w-full bg-[#2d2d30] border border-[#3e3e42] rounded px-2 py-1 text-xs text-white h-16 resize-none"
+              placeholder="Enter message to store on BCH..."
+              value={opReturnMessage}
+              onChange={(e) => setOpReturnMessage(e.target.value)}
+            />
+            <Button
+              className="w-full bg-purple-600 hover:bg-purple-700 h-8 text-xs font-semibold"
+              onClick={handleSendOpReturn}
+              disabled={isLoading || !opReturnMessage}
+            >
+              Send Data Transaction
             </Button>
           </div>
         </div>
@@ -338,6 +509,6 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   )
 }

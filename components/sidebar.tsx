@@ -266,10 +266,10 @@ export function Sidebar({
                     >
                       <div className="flex items-center gap-2 mb-2">
                         <Code className="w-4 h-4 text-[#0e639c]" />
-                        <span className="text-sm font-medium text-white">App ID: {contract.appId}</span>
+                        <span className="text-sm font-medium text-white">Contract: {contract.artifact}</span>
                       </div>
                       <div className="text-xs text-[#969696] mb-2">Deployed: {new Date(contract.time).toLocaleString()}</div>
-                      <div className="text-xs text-[#569cd6]">Status: Deployed</div>
+                      <div className="text-xs text-[#569cd6]">Tx: {contract.txId?.substring(0, 10)}...</div>
                     </div>
                   ))
                 ) : (
@@ -290,16 +290,16 @@ export function Sidebar({
             <div className="p-3">
               <div className="space-y-1">
                 <div className="px-2 py-2 hover:bg-[#2a2d2e] cursor-pointer text-sm rounded transition-colors">
-                  📚 Getting Started
+                  📚 CashScript Intro
                 </div>
                 <div className="px-2 py-2 hover:bg-[#2a2d2e] cursor-pointer text-sm rounded transition-colors">
-                  🔧 Smart Contracts
+                  🔧 Smart Contracts on BCH
                 </div>
                 <div className="px-2 py-2 hover:bg-[#2a2d2e] cursor-pointer text-sm rounded transition-colors">
-                  🐍 PyTeal Basics
+                  📦 Mainnet-js SDK
                 </div>
                 <div className="px-2 py-2 hover:bg-[#2a2d2e] cursor-pointer text-sm rounded transition-colors">
-                  💎 Asset Creation
+                  💎 CashTokens Guide
                 </div>
                 <div className="px-2 py-2 hover:bg-[#2a2d2e] cursor-pointer text-sm rounded transition-colors">
                   🚀 Deployment Guide

@@ -9,7 +9,6 @@ import { toast } from "@/hooks/use-toast"
 import { Code, Zap, Home, Play, Download, Trash2, TerminalIcon, WalletIcon } from "lucide-react"
 import Link from "next/link"
 import { WalletPanel } from "@/components/wallet-panel"
-import algosdk from "algosdk"
 import { generateCode } from "../../lib/code-generator"
 
 interface Wallet {
@@ -18,7 +17,7 @@ interface Wallet {
   privateKey: string
   mnemonic: string
   transactions: any[]
-  algoPrice: number
+  bchPrice: number
 }
 
 export default function BuildPage() {
@@ -33,7 +32,7 @@ export default function BuildPage() {
 
   const getWallet = () => {
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
-      const savedWallet = localStorage.getItem("algorand-wallet")
+      const savedWallet = localStorage.getItem("bch-wallet")
       if (savedWallet) {
         try {
           const parsedWallet = JSON.parse(savedWallet)
@@ -41,11 +40,11 @@ export default function BuildPage() {
             setWallet(parsedWallet)
           } else {
             console.error("Invalid wallet data in localStorage:", parsedWallet)
-            if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
+            if (typeof localStorage.removeItem === 'function') localStorage.removeItem("bch-wallet")
           }
         } catch (error) {
           console.error("Error parsing wallet from localStorage:", error)
-          if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
+          if (typeof localStorage.removeItem === 'function') localStorage.removeItem("bch-wallet")
         }
       }
     }
@@ -57,59 +56,27 @@ export default function BuildPage() {
 
   const createWallet = async () => {
     try {
-      const account = algosdk.generateAccount()
+      const { TestNetWallet } = (await import("mainnet-js")) as any
+      const account = await TestNetWallet.newRandom()
 
       const newWallet = {
-        address: account.addr.toString(),
+        address: account.cashaddr || "",
         balance: 0,
-        privateKey: algosdk.secretKeyToMnemonic(account.sk),
-        mnemonic: algosdk.secretKeyToMnemonic(account.sk),
+        privateKey: account.privateKeyWif || "",
+        mnemonic: account.mnemonic || "",
         transactions: [],
-        algoPrice: 0,
+        bchPrice: 0,
       }
 
       setWallet(newWallet)
       if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
-        localStorage.setItem("algorand-wallet", JSON.stringify(newWallet))
+        localStorage.setItem("bch-wallet", JSON.stringify(newWallet))
       }
 
-      // Show funding instructions
-      console.log("Wallet created! To fund with test ALGO, visit:")
-      console.log(`https://testnet.algoexplorer.io/dispenser?addr=${newWallet.address}`)
+      console.log("Wallet created! To fund with test BCH, use the Faucet button or visit:")
+      console.log(`https://chipnet.imaginary.cash/`)
     } catch (error) {
       console.error("Error creating wallet:", error)
-    }
-  }
-
-  const fundWallet = async () => {
-    if (!wallet?.address) return
-
-    try {
-      // Use Algorand TestNet faucet
-      const response = await fetch("https://testnet-api.algonode.cloud/v2/transactions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-          to: wallet.address,
-          amount: 100000000, // 100 ALGO in microAlgos
-          fee: 1000,
-          firstRound: 1,
-          lastRound: 1000,
-          genesisID: "testnet-v1.0",
-          genesisHash: "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
-        }),
-      })
-
-      if (response.ok) {
-        console.log("Funding request submitted successfully")
-      } else {
-        console.error("Failed to fund wallet")
-      }
-    } catch (error) {
-      console.error("Error funding wallet:", error)
     }
   }
 
@@ -119,28 +86,12 @@ export default function BuildPage() {
 
     toast({
       title: "Running Flow",
-      description: "Your Algorand flow is being executed...",
+      description: "Your Bitcoin Cash flow is being executed...",
       duration: 3000,
     })
 
     const generatedCode = generateCode(nodes, edges)
 
-    // Replace the algosdk import statement in the generated code
-    let modifiedGeneratedCode = generatedCode.replace(
-      "import algosdk from 'algosdk';",
-      ""
-    );
-    modifiedGeneratedCode = modifiedGeneratedCode.replace(
-      "const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);",
-      ""
-    );
-
-
-    modifiedGeneratedCode = modifiedGeneratedCode.replace(
-      "const params = await algodClient.getTransactionParams().do();",
-      ""
-    );
-    // console.log(modifiedGeneratedCode)
     // Capture console.log output
     let capturedOutput = ""
     const originalConsoleLog = console.log
@@ -150,20 +101,12 @@ export default function BuildPage() {
     }
 
     try {
-      const algodToken = 'YOUR_ALGOD_API_TOKEN';
-      const algodServer = 'https://testnet-api.algonode.cloud';
-      const algodPort = ''; // Empty for Algonode cloud
-
-      const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);
-      const params = await algodClient.getTransactionParams().do();
       // Execute the generated code
-      // Using new Function() is generally not recommended for untrusted code
-      // due to security risks (e.g., XSS). For an IDE where the user generates
-      // their own code, it's a practical approach.
       const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
-      const runnableCode = new AsyncFunction('algosdk', 'algodClient', 'params', modifiedGeneratedCode);
+      const mainnetJs = await import("mainnet-js")
+      const runnableCode = new AsyncFunction('mainnetJs', generatedCode);
 
-      await runnableCode(algosdk, algodClient, params);
+      await runnableCode(mainnetJs);
 
       setTerminalOutput(capturedOutput)
       toast({
@@ -195,7 +138,7 @@ export default function BuildPage() {
             <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
             <div className="w-3 h-3 rounded-full bg-[#28ca42]"></div>
           </div>
-          <span className="font-medium" style={{ color: "var(--text-color)" }}>AlgoFlow</span>
+          <span className="font-medium" style={{ color: "var(--text-color)" }}>CashFlow</span>
         </div>
         <div className="flex items-center gap-2">
           {wallet && wallet.address ? (
@@ -204,7 +147,7 @@ export default function BuildPage() {
               className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
               style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}
             >
-              Wallet: {`${String(wallet.address.substring(0, 10))}...` || "Invalid Address"}
+              Wallet: {`${String(wallet.address.substring(0, 15))}...` || "Invalid Address"}
             </button>
           ) : (
             <button
@@ -243,17 +186,17 @@ export default function BuildPage() {
                   const url = URL.createObjectURL(dataBlob)
                   const link = document.createElement("a")
                   link.href = url
-                  link.download = `algorand-script-${Date.now()}.js`
+                  link.download = `bch-script-${Date.now()}.js`
                   link.click()
                   URL.revokeObjectURL(url)
                   toast({
                     title: "Code Exported",
-                    description: "Your Algorand script has been exported as a .js file",
+                    description: "Your Bitcoin Cash script has been exported as a .js file",
                     duration: 3000,
                   })
                 }}
                 size="sm"
-                style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)", "&:hover": { backgroundColor: "var(--button-hover-color)" } }}
+                style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}
                 title="Export Flow"
               >
                 <Download className="h-4 w-4" />
@@ -282,7 +225,7 @@ export default function BuildPage() {
                   }
                 }}
                 size="sm"
-                style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)", "&:hover": { backgroundColor: "var(--button-hover-color)" } }}
+                style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}
                 title="Delete Selected Node"
               >
                 <Trash2 className="h-4 w-4" />
@@ -314,9 +257,6 @@ export default function BuildPage() {
             backgroundColor: isTerminalOpen ? "var(--button-color)" : "var(--sidebar-color)",
             color: "var(--text-color)",
             border: "1px solid var(--border-color)",
-            "&:hover": {
-              backgroundColor: isTerminalOpen ? "var(--button-hover-color)" : "var(--button-hover-color)",
-            },
           }}
           size="sm"
         >

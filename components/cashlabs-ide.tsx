@@ -27,7 +27,6 @@ const supabase = createClient(
 
 import { useToast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { DefaultWallet } from "mainnet-js"
 import {
   Dialog,
   DialogContent,
@@ -182,8 +181,8 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
   const createWallet = async () => {
     try {
-      const { DefaultWallet } = await import("mainnet-js")
-      const account = await DefaultWallet.newRandom()
+      const { TestNetWallet } = (await import("mainnet-js")) as any
+      const account = await TestNetWallet.newRandom()
 
       const newWallet = {
         address: account.cashaddr || "",
@@ -193,6 +192,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         transactions: [],
         bchPrice: 0,
       }
+
 
       setWallet(newWallet as any)
       if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
@@ -541,22 +541,17 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     setShowBuildPanel(true);
     console.log(`[BUILD] Starting build for template: ${selectedTemplate}`);
 
-    if (selectedTemplate === 'PuyaTs') {
+    if (selectedTemplate === 'Libauth') {
       await handlePuyaTsBuild();
       return;
     }
 
-    if (selectedTemplate === 'PuyaPy') {
+    if (selectedTemplate === 'Mainnet-js') {
       await handlePuyaPyBuild();
       return;
     }
 
-    if (selectedTemplate === 'Pyteal' || selectedTemplate === 'PyTeal') {
-      await handlePyTealBuild();
-      return;
-    }
-
-    if (selectedTemplate === 'TealScript') {
+    if (selectedTemplate === 'CashScript') {
       await handleTealScriptBuild();
       return;
     }
@@ -955,7 +950,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
             <div className="w-3 h-3 rounded-full bg-[#ffbd2e]"></div>
             <div className="w-3 h-3 rounded-full bg-[#28ca42]"></div>
           </div>
-          <span className="font-medium" style={{ color: "var(--text-color)" }}>Algokit IDE</span>
+          <span className="font-medium" style={{ color: "var(--text-color)" }}>CashLabs IDE</span>
         </div>
         <div className="font-medium text-sm" style={{ color: "var(--text-color)" }}>{selectedTemplateName}</div>
         <div className="flex items-center gap-2">
