@@ -17,6 +17,7 @@ import { ArtifactsPanel } from "@/components/artifacts-panel"
 import { ProgramsPanel } from "@/components/programs-panel"
 import { SettingsPanel } from "@/components/settings-panel"
 import { ArtifactFileViewerPanel } from "@/components/artifact-file-viewer-panel"
+import { Pencil } from "lucide-react"
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -52,6 +53,8 @@ interface Wallet {
 
 export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTemplateName, projectId }: { initialFiles: any, selectedTemplate: string, selectedTemplateName: string, projectId?: string }) {
   const [currentFiles, setCurrentFiles] = useState<any>(initialFiles);
+  const [contractName, setContractName] = useState(selectedTemplateName);
+  const [isEditingName, setIsEditingName] = useState(false);
 
   const getAllFileContents = (tree: any, currentPath: string = '') => {
     let contents: Record<string, string> = {};
@@ -609,7 +612,10 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ file_structure: filesToSave })
+        body: JSON.stringify({
+          file_structure: filesToSave,
+          name: contractName
+        })
       });
 
       if (response.ok) {
@@ -797,21 +803,45 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
           </div>
           <span className="font-medium" style={{ color: "var(--text-color)" }}>CashLabs IDE</span>
         </div>
-        <div className="font-medium text-sm" style={{ color: "var(--text-color)" }}>{selectedTemplateName}</div>
+        <div className="flex items-center gap-2">
+          {isEditingName ? (
+            <input
+              autoFocus
+              className="bg-[#1e1e1e] border border-white/10 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-[#5ae6b9]/50 w-48"
+              value={contractName}
+              onChange={(e) => setContractName(e.target.value)}
+              onBlur={() => {
+                setIsEditingName(false);
+                saveProject();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  setIsEditingName(false);
+                  saveProject();
+                }
+              }}
+            />
+          ) : (
+            <div className="flex items-center gap-2 group cursor-pointer hover:bg-white/5 px-2 py-0.5 rounded transition-colors" onClick={() => setIsEditingName(true)}>
+              <span className="font-bold text-sm tracking-tight text-white/80 group-hover:text-white">{contractName}</span>
+              <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-all text-[#5ae6b9]" />
+            </div>
+          )}
+        </div>
         <div className="flex items-center gap-2">
           {wallet && wallet.address ? (
             <button
               onClick={() => setShowWallet(!showWallet)}
-              className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
-              style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}
+              className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
+              style={{ backgroundColor: "var(--button-color)", color: "black" }}
             >
               Wallet: {`${String(wallet.address.substring(0, 10))}...` || "Invalid Address"}
             </button>
           ) : (
             <button
               onClick={createWallet}
-              className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
-              style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}
+              className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
+              style={{ backgroundColor: "var(--button-color)", color: "black" }}
             >
               Create Wallet
             </button>

@@ -22,7 +22,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await request.json()
-    const { file_structure } = body
+    const { file_structure, name } = body
 
     // 1. Determine Artifact (if any)
     let artifact_json = null;
@@ -57,6 +57,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     else updateData.source_code = JSON.stringify(file_structure); // fallback
 
     if (artifact_json) updateData.artifact_json = artifact_json;
+    if (name) updateData.name = name;
 
     const { data: contract, error } = await supabase
       .from('contracts')
