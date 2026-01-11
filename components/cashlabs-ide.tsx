@@ -759,6 +759,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
           appId: address, // Alias for UI compatibility
           tokenAddress,
           artifact: filename,
+          artifactData: artifact, // Store full artifact for persistence
           args,
           time: Date.now(),
           methods: artifact.abi.map((fn: any) => ({
@@ -933,51 +934,130 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
   const executeMethod = async () => {
     if (!selectedContract || !selectedMethod) return;
     setIsDeploying(true);
+    handleTerminalOutput(`\n🚀 Preparing to execute: ${selectedMethod.name}`);
+
     try {
-      const artifactPath = `artifacts/${selectedContract.artifact}`;
-      const fileContent = fileContents[artifactPath] || '';
-      if (!fileContent) {
-        throw new Error(`Artifact file ${selectedContract.artifact} not found`);
+      // 1. OBTAIN ARTIFACT
+      let artifact = selectedContract.artifactData;
+
+      if (!artifact) {
+        const artifactPath = `artifacts/${selectedContract.artifact}`;
+        const filename = selectedContract.artifact;
+        const fileContent = fileContents[artifactPath] || fileContents[filename] || '';
+
+        if (fileContent) {
+          artifact = JSON.parse(fileContent);
+        } else {
+          // Deep search in fileContents
+          const foundKey = Object.keys(fileContents).find(k => k.endsWith(filename));
+          if (foundKey) {
+            artifact = JSON.parse(fileContents[foundKey]);
+          }
+        }
       }
 
-      const appSpec = JSON.parse(fileContent);
+      if (!artifact) {
+        throw new Error(`Contract artifact (${selectedContract.artifact}) could not be located in workspace or local storage.`);
+      }
 
       if (!wallet) {
-        throw new Error("Wallet not connected");
+        throw new Error("Wallet not connected. Private key required for execution.");
       }
-      handleTerminalOutput("Smart contract method execution for Bitcoin Cash is being integrated.");
-      return;
-      /*
-      const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
-      const creator = wallet;
-  
-      const { AlgorandClient } = await import("@algorandfoundation/algokit-utils");
-      const algorandClient = AlgorandClient.fromConfig({
-        algodConfig: { server: "https://rest.mainnet.cash", token: "" },
-        indexerConfig: { server: "https://rest.mainnet.cash", token: "" },
+
+      // 2. INITIALIZE SDK
+      const { Contract, ElectrumNetworkProvider, SignatureTemplate } = await import('cashscript');
+      const provider = new ElectrumNetworkProvider('chipnet');
+
+      // Re-instantiate contract
+      // selectedContract.args contains construction arguments
+      const contract = new Contract(artifact, selectedContract.args || [], { provider });
+
+      if (contract.address !== selectedContract.address) {
+        handleTerminalOutput(`⚠️  Warning: Derived address (${contract.address}) does not match deployment address (${selectedContract.address}). Check constructor arguments.`);
+      }
+
+      // 3. PROCESS ARGUMENTS
+      const processedArgs = executeArgs.map((val, i) => {
+        const argInfo = selectedMethod.args[i];
+        if (!argInfo) return val;
+
+        const type = argInfo.type;
+        handleTerminalOutput(`   Mapping arg [${argInfo.name}] (${type}): ${val}`);
+
+        if (type === 'sig') {
+          return new SignatureTemplate(wallet.privateKey);
+        }
+        if (type === 'pubkey') {
+          return new SignatureTemplate(wallet.privateKey).getPublicKey();
+        }
+        if (type === 'int') {
+          try {
+            return BigInt(val);
+          } catch {
+            throw new Error(`Invalid integer value for ${argInfo.name}: ${val}`);
+          }
+        }
+        if (type === 'bool') {
+          return val === 'true' || val === '1';
+        }
+        // Bytes handling (e.g. 0x...)
+        if (type.startsWith('bytes') && typeof val === 'string' && val.startsWith('0x')) {
+          // cashscript handles 0x strings automatically in many cases, but let's be safe
+          return val;
+        }
+
+        return val;
       });
-  
-      const appClient = algorandClient.client.getAppClientById({
-        appSpec,
-        appId: BigInt(selectedContract.appId),
-        defaultSender: creator.address,
-        defaultSigner: algosdk.makeBasicAccountTransactionSigner(account)
+
+      // 4. BUILD & SEND TRANSACTION
+      handleTerminalOutput(`📡 Broadcasting to Chipnet...`);
+
+      const func = (contract.unlock as any)[selectedMethod.name];
+      if (typeof func !== 'function') {
+        throw new Error(`Method ${selectedMethod.name} not found on contract instance.`);
+      }
+
+      const tx = func(...processedArgs);
+
+      // We send 1000 satoshis (dust/small amount) to the user's wallet to ensure 
+      // the transaction has at least one output and valid fee calculation.
+      // This is common for non-covenant/simple contract calls.
+      const txDetails = await tx.to(wallet.address, BigInt(1000)).send();
+
+      handleTerminalOutput(`✅ Transaction confirmed!`);
+      handleTerminalOutput(`   TXID: ${txDetails.txid}`);
+      handleTerminalOutput(`   Explorer: https://chipnet.imaginary.cash/tx/${txDetails.txid}`);
+
+      toast({
+        title: "Success: Method Executed",
+        description: `${selectedMethod.name} successful! TXID: ${txDetails.txid.substring(0, 8)}...`
       });
-  
-      const result = await appClient.send.call({
-        method: selectedMethod.name,
-        args: executeArgs,
-        sender: creator.address,
-        signer: algosdk.makeBasicAccountTransactionSigner(account),
-        populateAppCallResources: true,
-        staticFee: (2_000).microAlgo(),
-      })
-  
-      toast({ title: "Method executed successfully!", description: `Result: ${result.return}` });
-      */
+
     } catch (error: any) {
-      console.error("Method execution failed:", error);
-      toast({ title: "Method execution failed", description: error.message || String(error), variant: "destructive" });
+      console.error("[CASHSCRIPT] Execution Error:", error);
+
+      // Nice error handling for common CashScript failures
+      let errorMessage = error.message || String(error);
+
+      if (errorMessage.includes('FailedRequireError')) {
+        handleTerminalOutput(`❌ Contract Requirement Failed:`);
+        if (error.requireStatement) {
+          handleTerminalOutput(`   Location: Line ${error.requireStatement.line}`);
+          handleTerminalOutput(`   Reason: ${error.requireStatement.message || 'Specific requirement not met'}`);
+          errorMessage = `Contract failed at line ${error.requireStatement.line}: ${error.requireStatement.message || 'Check inputs'}`;
+        }
+      } else if (errorMessage.includes('insufficient priority') || errorMessage.includes('insufficient funds')) {
+        handleTerminalOutput(`❌ Wallet Error: Insufficient funds to pay for transaction.`);
+        errorMessage = "Your wallet has insufficient funds. Please fund it at the Chipnet Faucet.";
+      } else {
+        handleTerminalOutput(`❌ Error: ${errorMessage}`);
+      }
+
+      toast({
+        title: "Execution Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
     } finally {
       setIsDeploying(false);
       setIsExecuteModalOpen(false);
