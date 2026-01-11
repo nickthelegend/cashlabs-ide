@@ -36,8 +36,8 @@ async function getTemplateLang(slug: string) {
   return templates[slug]?.lang || 'Pyteal';
 }
 
-export default async function PlayPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function PlayPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const files = await getTemplateFiles(slug);
   const lang = await getTemplateLang(slug);
 

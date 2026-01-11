@@ -260,13 +260,93 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     closeFile(filePath);
   };
 
-  const handleStop = () => {
-    setIsBuilding(false)
-  }
+  const handlePuyaTsBuild = async () => {
+    setIsBuilding(true);
+    handleTerminalOutput("Compiling PuyaTs contract...");
 
-  const handleClearLogs = () => {
-    setTerminalOutput([])
-  }
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const updatedFiles = { ...currentFiles };
+      updatedFiles.artifacts = { directory: {} };
+
+      const newFileContents = { ...fileContents };
+      Object.keys(newFileContents).forEach(key => {
+        if (key.startsWith('artifacts/') || key.startsWith('tmp/') || key.startsWith('cache/') || key.startsWith('dist/')) {
+          delete newFileContents[key];
+        }
+      });
+
+      const algoFiles = Object.keys(fileContents).filter(path => path.endsWith('.algo.ts'));
+
+      if (algoFiles.length === 0) {
+        handleTerminalOutput("No .algo.ts files found.");
+        return;
+      }
+
+      for (const filePath of algoFiles) {
+        const filename = filePath.split('/').pop();
+        const contractName = filename?.replace('.algo.ts', '') || 'contract';
+        const code = fileContents[filePath];
+
+        console.log("=== COMPILING FILE ===");
+        console.log(filePath);
+        console.log(code);
+
+        if (!code || code.trim().length === 0) {
+          handleTerminalOutput(`Skipping empty file: ${filePath}`);
+          continue;
+        }
+
+        handleTerminalOutput(`Compiling ${filePath}...`);
+        console.log(`[BUILD] PuyaTs compilation started for ${filePath}`);
+
+        const response = await fetch('/api/compile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Force-Fresh-Compiler': 'true',
+          },
+          body: JSON.stringify({
+            type: 'puyats',
+            filename,
+            code,
+            forceFresh: true
+          })
+        });
+
+        const result = await response.json();
+        console.log(`[BUILD] PuyaTs compilation result:`, result);
+
+        if (result.ok && result.files) {
+          for (const [fileName, fileData] of Object.entries(result.files)) {
+            const data = (fileData as any).data;
+            const encoding = (fileData as any).encoding;
+            const content = encoding === 'base64' ? atob(data) : data;
+
+            const uniqueFileName = fileName.replace(/^[^.]+/, contractName);
+
+            updatedFiles.artifacts.directory[uniqueFileName] = {
+              file: { contents: content }
+            };
+
+            newFileContents[`artifacts/${uniqueFileName}`] = content;
+          }
+          handleTerminalOutput(`Successfully compiled ${filePath}`);
+        } else {
+          handleTerminalOutput(`Failed to compile ${filePath}: ${result.error || 'Unknown error'}`);
+        }
+      }
+
+      setCurrentFiles(updatedFiles);
+      setFileContents(newFileContents);
+    } catch (error: any) {
+      console.error('[BUILD] PuyaTs build error:', error);
+      handleTerminalOutput(`Build failed: ${error.message || error}`);
+    } finally {
+      setIsBuilding(false);
+    }
+  };
 
   const handleCashScriptBuild = async () => {
     setIsBuilding(true);
@@ -364,10 +444,6 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       handleTerminalOutput("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
       handleTerminalOutput(`🎉 Build Finished: ${successCount} success, ${errorCount} errors`);
 
-      if (successCount > 0 && projectId) {
-        await saveProject(updatedFiles);
-      }
-
     } catch (error: any) {
       handleTerminalOutput(`🛑 Critical error: ${error.message || error}`);
     } finally {
@@ -375,14 +451,147 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     }
   };
 
+  // Keep legacy function name for backwards compatibility
   const handleTealScriptBuild = handleCashScriptBuild;
+
+  const handlePuyaPyBuild = async () => {
+    setIsBuilding(true);
+    handleTerminalOutput("Compiling PuyaPy contract...");
+
+    try {
+      const contractFile = fileContents['contract.py'];
+      if (!contractFile) {
+        handleTerminalOutput("No contract.py file found.");
+        return;
+      }
+
+      console.log(`[BUILD] PuyaPy compilation started`);
+
+      const response = await fetch('/api/compile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'puyapy',
+          code: btoa(contractFile)
+        })
+      });
+
+      const result = await response.json();
+      console.log(`[BUILD] PuyaPy compilation result:`, result);
+
+      if (result.ok && result.files) {
+        const updatedFiles = { ...currentFiles };
+        if (!updatedFiles.artifacts) {
+          updatedFiles.artifacts = { directory: {} };
+        }
+
+        const newFileContents = { ...fileContents };
+
+        for (const [fileName, fileData] of Object.entries(result.files)) {
+          const data = (fileData as any).data;
+          const encoding = (fileData as any).encoding;
+          const content = encoding === 'base64' ? atob(data) : data;
+
+          updatedFiles.artifacts.directory[fileName] = {
+            file: { contents: content }
+          };
+
+          newFileContents[`artifacts/${fileName}`] = content;
+        }
+
+        setCurrentFiles(updatedFiles);
+        setFileContents(newFileContents);
+        handleTerminalOutput("PuyaPy compilation completed successfully");
+      } else {
+        handleTerminalOutput(`Compilation failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      console.error('[BUILD] PuyaPy build error:', error);
+      handleTerminalOutput(`Build failed: ${error.message || error}`);
+    } finally {
+      setIsBuilding(false);
+    }
+  }
+
+  const handlePyTealBuild = async () => {
+    setIsBuilding(true);
+    handleTerminalOutput("Compiling PyTeal contract...");
+
+    try {
+      const contractFile = fileContents['contract.py'];
+      if (!contractFile) {
+        handleTerminalOutput("No contract.py file found.");
+        return;
+      }
+
+      console.log(`[BUILD] PyTeal compilation started`);
+
+      const response = await fetch('/api/compile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'pyteal',
+          code: btoa(contractFile)
+        })
+      });
+
+      const result = await response.json();
+      console.log(`[BUILD] PyTeal compilation result:`, result);
+
+      if (result.ok && result.files) {
+        const updatedFiles = { ...currentFiles };
+        if (!updatedFiles.artifacts) {
+          updatedFiles.artifacts = { directory: {} };
+        }
+
+        const newFileContents = { ...fileContents };
+
+        for (const [fileName, fileData] of Object.entries(result.files)) {
+          const data = (fileData as any).data;
+          const encoding = (fileData as any).encoding;
+          const content = encoding === 'base64' ? atob(data) : data;
+
+          updatedFiles.artifacts.directory[fileName] = {
+            file: { contents: content }
+          };
+
+          newFileContents[`artifacts/${fileName}`] = content;
+        }
+
+        setCurrentFiles(updatedFiles);
+        setFileContents(newFileContents);
+        handleTerminalOutput("PyTeal compilation completed successfully");
+      } else {
+        handleTerminalOutput(`Compilation failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (error: any) {
+      console.error('[BUILD] PyTeal build error:', error);
+      handleTerminalOutput(`Build failed: ${error.message || error}`);
+    } finally {
+      setIsBuilding(false);
+    }
+  }
 
   const handleBuild = async () => {
     setShowBuildPanel(true);
     console.log(`[BUILD] Starting build for template: ${selectedTemplate}`);
 
+    if (selectedTemplate === 'Libauth') {
+      await handlePuyaTsBuild();
+      return;
+    }
+
+    if (selectedTemplate === 'Mainnet-js') {
+      await handlePuyaPyBuild();
+      return;
+    }
+
     if (selectedTemplate === 'CashScript') {
-      await handleCashScriptBuild();
+      await handleTealScriptBuild();
       return;
     }
 
@@ -396,6 +605,81 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
   const handleDeploy = async () => {
     handleTerminalOutput("Use the artifacts panel to deploy contracts.");
   };
+
+  const handleGenerateClient = async () => {
+    setIsBuilding(true);
+    handleTerminalOutput("Generating client...");
+
+    try {
+      const arc32Files = Object.keys(fileContents).filter(path => path.endsWith('.arc32.json'));
+
+      if (arc32Files.length === 0) {
+        handleTerminalOutput("No .arc32.json files found.");
+        return;
+      }
+
+      for (const filePath of arc32Files) {
+        const arc32Content = fileContents[filePath];
+        const arc32Json = JSON.parse(arc32Content);
+
+        console.log(`[BUILD] Generating client for ${filePath}`);
+
+        const response = await fetch('/api/compile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'generate-client',
+            arc32Json
+          })
+        });
+
+        const result = await response.json();
+        console.log(`[BUILD] Client generation result:`, result);
+
+        if (result.ok && result.files) {
+          const updatedFiles = { ...currentFiles };
+          if (!updatedFiles.clients) {
+            updatedFiles.clients = { directory: {} };
+          }
+
+          const newFileContents = { ...fileContents };
+
+          for (const [fileName, fileData] of Object.entries(result.files)) {
+            const data = (fileData as any).data;
+            const encoding = (fileData as any).encoding;
+            const content = encoding === 'base64' ? atob(data) : data;
+
+            updatedFiles.clients.directory[fileName] = {
+              file: { contents: content }
+            };
+
+            newFileContents[`clients/${fileName}`] = content;
+          }
+
+          setCurrentFiles(updatedFiles);
+          setFileContents(newFileContents);
+          handleTerminalOutput(`Successfully generated client for ${filePath}`);
+        } else {
+          handleTerminalOutput(`Failed to generate client for ${filePath}: ${result.error || 'Unknown error'}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('[BUILD] Client generation error:', error);
+      handleTerminalOutput(`Client generation failed: ${error.message || error}`);
+    } finally {
+      setIsBuilding(false);
+    }
+  };
+
+  const handleStop = () => {
+    setIsBuilding(false)
+  }
+
+  const handleClearLogs = () => {
+    setTerminalOutput([])
+  }
 
   const handleDownloadSnapshot = async () => {
     setIsBuilding(true);
@@ -419,10 +703,6 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       setIsBuilding(false);
     }
   }
-
-  const handleGenerateClient = async () => {
-    handleTerminalOutput("Client generation not implemented yet.");
-  };
 
   const executeDeploy = async (filename: string, args: any[]) => {
     setIsDeploying(true);
@@ -595,9 +875,8 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     }
   };
 
-  const saveProject = async (updatedFiles?: any) => {
+  const saveProject = async () => {
     if (!projectId) return;
-    const filesToSave = updatedFiles || currentFiles;
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -609,7 +888,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ file_structure: filesToSave })
+        body: JSON.stringify({ file_structure: currentFiles })
       });
 
       if (response.ok) {

@@ -1,156 +1,98 @@
--- Projects table
-CREATE TABLE projects (
-  project_id VARCHAR(50) PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  name VARCHAR(255) NOT NULL,
+-- Create a table for users
+CREATE TABLE public.users (
+  id UUID REFERENCES auth.users NOT NULL PRIMARY KEY,
+  email TEXT NOT NULL,
+  full_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable Row Level Security (RLS) for users
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to view their own profile
+CREATE POLICY "Users can view own profile" ON public.users
+  FOR SELECT USING (auth.uid() = id);
+
+-- Allow users to update their own profile
+CREATE POLICY "Users can update own profile" ON public.users
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Create a table for smart contracts
+CREATE TABLE public.contracts (
+  id TEXT NOT NULL PRIMARY KEY, -- We'll use the contract Hash ID here
+  owner_id UUID REFERENCES public.users(id) NOT NULL,
+  name TEXT NOT NULL,
   description TEXT,
-  template VARCHAR(50) NOT NULL CHECK (template IN ('TealScript', 'PuyaPy', 'PuyaTs', 'PyTeal')),
-  shareable VARCHAR(20) NOT NULL DEFAULT 'private' CHECK (shareable IN ('private', 'public')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  source_code TEXT, -- The .cash file content
+  artifact_json JSONB, -- The compiled artifact
+  is_public BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Project files table
-CREATE TABLE project_files (
+-- Enable RLS for contracts
+ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
+
+-- Allow anyone to view public contracts
+CREATE POLICY "Anyone can view public contracts" ON public.contracts
+  FOR SELECT USING (is_public = true);
+
+-- Allow authenticated users to view their own private contracts
+CREATE POLICY "Users can view own contracts" ON public.contracts
+  FOR SELECT USING (auth.uid() = owner_id);
+
+-- Allow users to insert their own contracts
+CREATE POLICY "Users can create contracts" ON public.contracts
+  FOR INSERT WITH CHECK (auth.uid() = owner_id);
+
+-- Allow users to update their own contracts
+CREATE POLICY "Users can update own contracts" ON public.contracts
+  FOR UPDATE USING (auth.uid() = owner_id);
+
+-- Create a table for deployments (history)
+CREATE TABLE public.deployments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  project_id VARCHAR(50) REFERENCES projects(project_id) ON DELETE CASCADE,
-  file_structure JSONB NOT NULL DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  contract_id TEXT REFERENCES public.contracts(id) ON DELETE CASCADE NOT NULL,
+  deployer_id UUID REFERENCES public.users(id),
+  tx_id TEXT NOT NULL,
+  address TEXT NOT NULL,
+  network TEXT DEFAULT 'chipnet',
+  timestamp TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Indexes for faster queries
-CREATE INDEX idx_projects_user_id ON projects(user_id);
-CREATE INDEX idx_projects_shareable ON projects(shareable);
-CREATE INDEX idx_projects_template ON projects(template);
-CREATE INDEX idx_project_files_project_id ON project_files(project_id);
+-- Enable RLS for deployments
+ALTER TABLE public.deployments ENABLE ROW LEVEL SECURITY;
 
--- RLS (Row Level Security) policies for projects
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own projects" ON projects
-  FOR SELECT USING (auth.uid() = user_id);
-
-CREATE POLICY "Anyone can view public projects" ON projects
-  FOR SELECT USING (shareable = 'public');
-
-CREATE POLICY "Users can insert own projects" ON projects
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users can update own projects" ON projects
-  FOR UPDATE USING (auth.uid() = user_id);
-
-CREATE POLICY "Users can delete own projects" ON projects
-  FOR DELETE USING (auth.uid() = user_id);
-
--- RLS policies for project_files
-ALTER TABLE project_files ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own project files" ON project_files
+-- Allow anyone to view deployments of public contracts
+CREATE POLICY "Anyone can view deployments of public contracts" ON public.deployments
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM projects 
-      WHERE projects.project_id = project_files.project_id 
-      AND projects.user_id = auth.uid()
+      SELECT 1 FROM public.contracts
+      WHERE public.contracts.id = public.deployments.contract_id
+      AND public.contracts.is_public = true
     )
   );
 
-CREATE POLICY "Anyone can view public project files" ON project_files
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM projects 
-      WHERE projects.project_id = project_files.project_id 
-      AND projects.shareable = 'public'
-    )
-  );
+-- Allow users to view their own deployments
+CREATE POLICY "Users can view own deployments" ON public.deployments
+  FOR SELECT USING (auth.uid() = deployer_id);
 
-CREATE POLICY "Users can insert own project files" ON project_files
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM projects 
-      WHERE projects.project_id = project_files.project_id 
-      AND projects.user_id = auth.uid()
-    )
-  );
+-- Allow users to insert deployments
+CREATE POLICY "Users can insert deployments" ON public.deployments
+  FOR INSERT WITH CHECK (auth.uid() = deployer_id);
 
-CREATE POLICY "Users can update own project files" ON project_files
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM projects 
-      WHERE projects.project_id = project_files.project_id 
-      AND projects.user_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Users can delete own project files" ON project_files
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM projects 
-      WHERE projects.project_id = project_files.project_id 
-      AND projects.user_id = auth.uid()
-    )
-  );
-
--- Function to update updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
+-- Function to handle new user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
+  INSERT INTO public.users (id, email, full_name, avatar_url)
+  VALUES (new.id, new.email, new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'avatar_url');
+  RETURN new;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Triggers to automatically update updated_at
-CREATE TRIGGER update_projects_updated_at
-  BEFORE UPDATE ON projects
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_project_files_updated_at
-  BEFORE UPDATE ON project_files
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
--- AI Embeddings tables (optional - for RAG functionality)
--- These tables store documentation chunks with vector embeddings for semantic search
-
--- PyTeal documentation embeddings
-CREATE TABLE IF NOT EXISTS pyteal (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  text TEXT NOT NULL,
-  embedding TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- TealScript documentation embeddings
-CREATE TABLE IF NOT EXISTS tealscript (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  text TEXT NOT NULL,
-  embedding TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- PuyaPy (AlgoPy) documentation embeddings
-CREATE TABLE IF NOT EXISTS algopy (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  text TEXT NOT NULL,
-  embedding TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- PuyaTs documentation embeddings
-CREATE TABLE IF NOT EXISTS puyats (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  text TEXT NOT NULL,
-  embedding TEXT NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Indexes for embeddings tables (optional, for faster queries)
-CREATE INDEX IF NOT EXISTS idx_pyteal_created_at ON pyteal(created_at);
-CREATE INDEX IF NOT EXISTS idx_tealscript_created_at ON tealscript(created_at);
-CREATE INDEX IF NOT EXISTS idx_algopy_created_at ON algopy(created_at);
-CREATE INDEX IF NOT EXISTS idx_puyats_created_at ON puyats(created_at);
-
--- Note: Embeddings tables are public (no RLS) for read access
--- They contain documentation only, no user data
+-- Trigger to call handle_new_user on auth.users insert
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

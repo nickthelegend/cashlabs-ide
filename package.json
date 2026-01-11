@@ -9,8 +9,6 @@
     "dev:trace": "cross-env NODE_OPTIONS=--trace-deprecation next dev"
   },
   "dependencies": {
-    "@algorandfoundation/algokit-utils": "^9.1.1",
-    "@algorandfoundation/algorand-typescript": "^1.0.1",
     "@bitauth/libauth": "^3.1.0-next.8",
     "@hookform/resolvers": "^3.9.1",
     "@monaco-editor/react": "^4.7.0",
@@ -45,7 +43,6 @@
     "@webcontainer/api": "latest",
     "@webcontainer/snapshot": "^0.1.0",
     "@xyflow/react": "^12.8.2",
-    "algosdk": "latest",
     "autoprefixer": "^10.4.20",
     "cashc": "^0.12.1",
     "cashscript": "^0.12.1",

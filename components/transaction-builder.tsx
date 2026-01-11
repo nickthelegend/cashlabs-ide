@@ -108,51 +108,79 @@ function ArgInput({
       </div>
     )
   }
-  if (arg.type.startsWith('uint')) {
+  // CashScript / General Types
+  if (arg.type === 'int') {
     return (
       <div className="space-y-1">
         <Label className="text-sm font-medium">{labelPrefix}{arg.name} <span className="text-muted-foreground">({arg.type})</span></Label>
         <Input
           type="number"
           value={value || ''}
-          onChange={e => onChange(Number(e.target.value))}
-          placeholder={`Enter ${arg.name}...`}
+          onChange={e => onChange(BigInt(e.target.value))} // usage of BigInt for int
+          placeholder={`Enter integer for ${arg.name}...`}
           className="font-mono text-sm"
         />
       </div>
     )
   }
-  if (arg.type === 'address') {
-    return (
-      <div className="space-y-1">
-        <Label className="text-sm font-medium">{labelPrefix}{arg.name} <span className="text-muted-foreground">({arg.type})</span></Label>
-        <Input
-          value={value || ''}
-          onChange={e => onChange(e.target.value)}
-          placeholder="Enter Bitcoin Cash address..."
-          className="font-mono text-sm"
-        />
-      </div>
-    )
-  }
-  if (arg.type === 'boolean') {
+  if (arg.type === 'bool') {
     return (
       <div className="space-y-1">
         <Label className="text-sm font-medium">{labelPrefix}{arg.name} <span className="text-muted-foreground">({arg.type})</span></Label>
         <div className="flex gap-2">
           <Button
-            className={value === true ? '' : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'}
+            variant={value === true ? "default" : "outline"}
             onClick={() => onChange(true)}
           >True</Button>
           <Button
-            className={value === false ? '' : 'border border-input bg-background hover:bg-accent hover:text-accent-foreground'}
+            variant={value === false ? "default" : "outline"}
             onClick={() => onChange(false)}
           >False</Button>
         </div>
       </div>
     )
   }
-  // Fallback
+  if (arg.type === 'bytes' || arg.type.startsWith('bytes')) {
+    return (
+      <div className="space-y-1">
+        <Label className="text-sm font-medium">{labelPrefix}{arg.name} <span className="text-muted-foreground">({arg.type})</span></Label>
+        <Input
+          value={value || ''}
+          onChange={e => onChange(e.target.value)}
+          placeholder={`0x...`}
+          className="font-mono text-sm"
+        />
+      </div>
+    )
+  }
+  if (arg.type === 'sig') {
+    return (
+      <div className="space-y-1">
+        <Label className="text-sm font-medium">{labelPrefix}{arg.name} <span className="text-muted-foreground">({arg.type})</span></Label>
+        <Input
+          disabled
+          value="<Signature Placeholder>"
+          className="font-mono text-sm bg-muted"
+        />
+        <p className="text-xs text-muted-foreground">Signature will be generated from connected wallet.</p>
+      </div>
+    )
+  }
+  if (arg.type === 'pubkey') {
+    return (
+      <div className="space-y-1">
+        <Label className="text-sm font-medium">{labelPrefix}{arg.name} <span className="text-muted-foreground">({arg.type})</span></Label>
+        <Input
+          disabled
+          value="<Pubkey Placeholder>"
+          className="font-mono text-sm bg-muted"
+        />
+        <p className="text-xs text-muted-foreground">Public key will be derived from connected wallet.</p>
+      </div>
+    )
+  }
+
+  // Fallback for string or other types
   return (
     <div className="space-y-1">
       <Label className="text-sm font-medium">{labelPrefix}{arg.name} <span className="text-muted-foreground">({arg.type})</span></Label>
@@ -186,18 +214,18 @@ export function TransactionBuilder({
     setSimulationResult(null)
     try {
       await new Promise(resolve => setTimeout(resolve, 1000))
+      // Mock CashScript simulation
       const mockResult: SimulationResult = {
-        success: Math.random() > 0.3,
+        success: true,
         logs: [
-          "Application call to app " + contract.appId,
-          `Method: ${method.name}`,
-          "Args: " + JSON.stringify(args),
-          "Gas used: 1000",
-          "Success: true"
+          `Contract: ${contract.contractName || contract.address}`,
+          `Function: ${method.name}`,
+          "Inputs validated",
+          "Transaction built successfully"
         ],
-        returnValue: "0x1234567890abcdef",
-        gasUsed: 1000,
-        txnId: "mock-txn-id-" + Date.now()
+        returnValue: "True",
+        gasUsed: 0,
+        txnId: "simulated-tx-" + Date.now()
       }
       setSimulationResult(mockResult)
     } catch (error) {
