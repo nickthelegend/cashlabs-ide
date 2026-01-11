@@ -41,6 +41,13 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TransactionBuilder } from "@/components/transaction-builder"
+import { Globe, Lock, ChevronDown, Check } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface Wallet {
   address: string
@@ -51,10 +58,11 @@ interface Wallet {
   bchPrice: number
 }
 
-export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTemplateName, projectId }: { initialFiles: any, selectedTemplate: string, selectedTemplateName: string, projectId?: string }) {
+export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTemplateName, projectId, initialIsPublic = false }: { initialFiles: any, selectedTemplate: string, selectedTemplateName: string, projectId?: string, initialIsPublic?: boolean }) {
   const [currentFiles, setCurrentFiles] = useState<any>(initialFiles);
   const [contractName, setContractName] = useState(selectedTemplateName);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [isPublic, setIsPublic] = useState(initialIsPublic);
 
   const getAllFileContents = (tree: any, currentPath: string = '') => {
     let contents: Record<string, string> = {};
@@ -614,10 +622,10 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         },
         body: JSON.stringify({
           file_structure: filesToSave,
-          name: contractName
+          name: contractName,
+          is_public: isPublic
         })
       });
-
       if (response.ok) {
         handleTerminalOutput('Project saved successfully');
       } else {
@@ -626,6 +634,39 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     } catch (error) {
       console.error('Failed to save project:', error);
       handleTerminalOutput('Failed to save project');
+    }
+  };
+
+  const handleVisibilityChange = async (newVisibility: boolean) => {
+    setIsPublic(newVisibility);
+    if (projectId) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const response = await fetch(`/api/projects/${projectId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            file_structure: currentFiles,
+            name: contractName,
+            is_public: newVisibility
+          })
+        });
+
+        if (response.ok) {
+          handleTerminalOutput(`Visibility updated to ${newVisibility ? 'Public' : 'Private'}`);
+          toast({
+            title: "Visibility Updated",
+            description: `Project is now ${newVisibility ? 'Public' : 'Private'}`,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to update visibility:', error);
+      }
     }
   };
 
@@ -828,6 +869,58 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
             </div>
           )}
         </div>
+
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-1.5 px-2 py-1 rounded hover:bg-white/5 transition-colors text-xs font-bold text-white/70 hover:text-[#5ae6b9]">
+                {isPublic ? (
+                  <>
+                    <Globe className="w-3 h-3 text-[#5ae6b9]" />
+                    <span>Public</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3 h-3 text-white/50" />
+                    <span>Private</span>
+                  </>
+                )}
+                <ChevronDown className="w-3 h-3 opacity-50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-[#1e1e1e] border-white/10 text-white">
+              <DropdownMenuItem
+                onClick={() => handleVisibilityChange(true)}
+                className="flex items-center justify-between gap-4 cursor-pointer focus:bg-[#2a2a2a] focus:text-[#5ae6b9]"
+              >
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold">Public</span>
+                    <span className="text-[10px] text-white/40">Visible to everyone in community</span>
+                  </div>
+                </div>
+                {isPublic && <Check className="w-3 h-3 text-[#5ae6b9]" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleVisibilityChange(false)}
+                className="flex items-center justify-between gap-4 cursor-pointer focus:bg-[#2a2a2a] focus:text-[#5ae6b9]"
+              >
+                <div className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  <div className="flex flex-col">
+                    <span className="text-xs font-bold">Private</span>
+                    <span className="text-[10px] text-white/40">Only you can see and edit</span>
+                  </div>
+                </div>
+                {!isPublic && <Check className="w-3 h-3 text-[#5ae6b9]" />}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <div className="h-4 w-[1px] bg-white/10 mx-1"></div>
+        </div>
+
         <div className="flex items-center gap-2">
           {wallet && wallet.address ? (
             <button

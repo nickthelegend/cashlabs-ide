@@ -15,6 +15,8 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
     const [contractName, setContractName] = useState("Untitled Contract")
     const [error, setError] = useState<string | null>(null)
 
+    const [isPublic, setIsPublic] = useState(false)
+
     useEffect(() => {
         const fetchContract = async () => {
             try {
@@ -28,6 +30,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
                 if (!data) throw new Error("Contract not found")
 
                 setContractName(data.name || "Untitled")
+                setIsPublic(data.is_public || false)
 
                 // Reconstruct file structure from source_code string if it's not already a JSON structure
                 // In a more advanced version, we'd store the whole JSON structure in a separate column
@@ -93,6 +96,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
                 selectedTemplate="CashScript"
                 selectedTemplateName={contractName}
                 projectId={id}
+                initialIsPublic={isPublic}
             />
         </div>
     )

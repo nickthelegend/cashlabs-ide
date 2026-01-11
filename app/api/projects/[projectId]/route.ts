@@ -22,7 +22,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await request.json()
-    const { file_structure, name } = body
+    const { file_structure, name, is_public } = body
 
     // 1. Determine Artifact (if any)
     let artifact_json = null;
@@ -58,6 +58,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     if (artifact_json) updateData.artifact_json = artifact_json;
     if (name) updateData.name = name;
+    if (typeof is_public !== 'undefined') updateData.is_public = is_public;
 
     const { data: contract, error } = await supabase
       .from('contracts')
