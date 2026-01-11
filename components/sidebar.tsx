@@ -18,6 +18,7 @@ import {
   File,
   MessageSquare,
   Wrench,
+  Loader2,
 } from "lucide-react"
 import FileTree from "@/components/file-tree"
 import { cn } from "@/lib/utils"
@@ -37,6 +38,8 @@ interface SidebarProps {
   onArtifactFileSelect: (filePath: string) => void
   deployedContracts?: any[]
   onContractSelect?: (contract: any) => void
+  onBuild?: () => void
+  isBuilding?: boolean
 }
 
 const sidebarSections = [
@@ -65,6 +68,8 @@ export function Sidebar({
   onArtifactFileSelect,
   deployedContracts = [],
   onContractSelect,
+  onBuild,
+  isBuilding,
 }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["src", "tests", "scripts"]))
   const [expandedArtifactsFolders, setExpandedArtifactsFolders] = useState<Set<string>>(new Set())
@@ -243,8 +248,18 @@ export function Sidebar({
 
           {activeSection === "build" && (
             <div className="py-2">
-              <div className="px-3 py-1 text-xs font-medium uppercase tracking-wide text-[#969696] mb-2">
-                Artifacts
+              <div className="px-3 py-1 flex items-center justify-between mb-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-[#969696]">Artifacts</span>
+                {onBuild && (
+                  <button
+                    onClick={onBuild}
+                    disabled={isBuilding}
+                    className="text-[10px] bg-[#0e639c] hover:bg-[#1177bb] disabled:bg-gray-600 text-white px-2 py-0.5 rounded transition-colors flex items-center gap-1"
+                  >
+                    {isBuilding ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Hammer className="w-2.5 h-2.5" />}
+                    Compile All
+                  </button>
+                )}
               </div>
               {fileStructureProp.artifacts && Object.keys(fileStructureProp.artifacts.directory).length > 0 ? (
                 <div>{renderFileTree(fileStructureProp.artifacts.directory, "artifacts")}</div>

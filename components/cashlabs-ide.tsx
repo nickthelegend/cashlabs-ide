@@ -756,11 +756,15 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         const deployed = {
           contractName: artifact.contractName,
           address,
+          appId: address, // Alias for UI compatibility
           tokenAddress,
           artifact: filename,
           args,
           time: Date.now(),
-          functions: artifact.abi.map((fn: any) => fn.name),
+          methods: artifact.abi.map((fn: any) => ({
+            name: fn.name,
+            args: fn.inputs || []
+          })),
           bytesize,
           opcount,
         };
@@ -1048,6 +1052,8 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                 setSelectedContract(contract);
                 setIsMethodsModalOpen(true);
               }}
+              onBuild={handleBuild}
+              isBuilding={isBuilding}
             />
           </div>
         </ResizablePanel>
@@ -1258,7 +1264,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            {selectedContract?.methods.map((method: any) => (
+            {(selectedContract?.methods || (selectedContract as any)?.functions?.map((f: string) => ({ name: f, args: [] })) || []).map((method: any) => (
               <div key={method.name} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">

@@ -14,7 +14,8 @@ import {
   Clock,
   Download,
   Rocket,
-  Trash2
+  Trash2,
+  Loader2
 } from "lucide-react"
 
 interface BuildPanelProps {
@@ -56,7 +57,10 @@ export function BuildPanel({
     <div className="h-full flex flex-col bg-[#1e1e1e] text-white">
       {/* Header */}
       <div className="h-9 bg-[#2d2d30] flex items-center justify-between px-3 text-xs font-medium uppercase tracking-wide border-b border-[#3e3e42] flex-shrink-0">
-        <span className="text-[#cccccc]">Build Panel</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[#cccccc]">Build Panel</span>
+          {isBuilding && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
+        </div>
         <div className="flex items-center gap-1">
           {isBuilding ? (
             <Button
