@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import Editor from "@monaco-editor/react"
 import { X, Circle } from "lucide-react"
 import type { WebContainer } from "@webcontainer/api"
-import dracula from 'monaco-themes/themes/Dracula.json';
+import { draculaTheme } from "@/lib/dracula-theme";
 import { setupMonacoTypes } from "@/lib/setupMonaco";
 
 type Template = 'pyteal' | 'tealscript' | 'puyapy' | 'puyats';
@@ -79,7 +79,7 @@ export function CodeEditor({
 
     // Define custom theme
     monaco.editor.defineTheme('dracula', {
-      ...dracula
+      ...draculaTheme
     });
     monaco.editor.setTheme('dracula');
   };
@@ -157,8 +157,8 @@ export function CodeEditor({
             <div
               key={file}
               className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer border-r border-[#3e3e42] min-w-0 group hover:bg-[#37373d] transition-colors ${activeFile === file
-                  ? "bg-[#1e1e1e] text-white border-t-2 border-t-[#0e639c]"
-                  : "bg-[#2d2d30] text-[#cccccc]"
+                ? "bg-[#1e1e1e] text-white border-t-2 border-t-[#0e639c]"
+                : "bg-[#2d2d30] text-[#cccccc]"
                 }`}
               onClick={() => onFileSelect(file)}
             >
