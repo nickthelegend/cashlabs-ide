@@ -10,7 +10,7 @@ import { Code, Zap, Home, Play, Download, Trash2, TerminalIcon, WalletIcon } fro
 import Link from "next/link"
 import { WalletPanel } from "@/components/wallet-panel"
 import algosdk from "algosdk"
-import { generateCode } from "../../lib/code-generator" 
+import { generateCode } from "../../lib/code-generator"
 
 interface Wallet {
   address: string
@@ -32,19 +32,21 @@ export default function BuildPage() {
   const [wallet, setWallet] = useState<Wallet | null>(null)
 
   const getWallet = () => {
-    const savedWallet = localStorage.getItem("algorand-wallet")
-    if (savedWallet) {
-      try {
-        const parsedWallet = JSON.parse(savedWallet)
-        if (parsedWallet && typeof parsedWallet.address === 'string') {
-          setWallet(parsedWallet)
-        } else {
-          console.error("Invalid wallet data in localStorage:", parsedWallet)
-          localStorage.removeItem("algorand-wallet") // Clear invalid data
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      const savedWallet = localStorage.getItem("algorand-wallet")
+      if (savedWallet) {
+        try {
+          const parsedWallet = JSON.parse(savedWallet)
+          if (parsedWallet && typeof parsedWallet.address === 'string') {
+            setWallet(parsedWallet)
+          } else {
+            console.error("Invalid wallet data in localStorage:", parsedWallet)
+            if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
+          }
+        } catch (error) {
+          console.error("Error parsing wallet from localStorage:", error)
+          if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
         }
-      } catch (error) {
-        console.error("Error parsing wallet from localStorage:", error)
-        localStorage.removeItem("algorand-wallet") // Clear corrupted data
       }
     }
   }
@@ -67,8 +69,10 @@ export default function BuildPage() {
       }
 
       setWallet(newWallet)
-      localStorage.setItem("algorand-wallet", JSON.stringify(newWallet))
-      
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem("algorand-wallet", JSON.stringify(newWallet))
+      }
+
       // Show funding instructions
       console.log("Wallet created! To fund with test ALGO, visit:")
       console.log(`https://testnet.algoexplorer.io/dispenser?addr=${newWallet.address}`)
@@ -79,7 +83,7 @@ export default function BuildPage() {
 
   const fundWallet = async () => {
     if (!wallet?.address) return
-    
+
     try {
       // Use Algorand TestNet faucet
       const response = await fetch("https://testnet-api.algonode.cloud/v2/transactions", {
@@ -98,7 +102,7 @@ export default function BuildPage() {
           genesisHash: "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
         }),
       })
-      
+
       if (response.ok) {
         console.log("Funding request submitted successfully")
       } else {
@@ -126,7 +130,7 @@ export default function BuildPage() {
       "import algosdk from 'algosdk';",
       ""
     );
-     modifiedGeneratedCode = modifiedGeneratedCode.replace(
+    modifiedGeneratedCode = modifiedGeneratedCode.replace(
       "const algodClient = new algosdk.Algodv2(algodToken, algodServer, algodPort);",
       ""
     );
@@ -156,9 +160,9 @@ export default function BuildPage() {
       // Using new Function() is generally not recommended for untrusted code
       // due to security risks (e.g., XSS). For an IDE where the user generates
       // their own code, it's a practical approach.
-      const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
+      const AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
       const runnableCode = new AsyncFunction('algosdk', 'algodClient', 'params', modifiedGeneratedCode);
-      
+
       await runnableCode(algosdk, algodClient, params);
 
       setTerminalOutput(capturedOutput)
@@ -200,7 +204,7 @@ export default function BuildPage() {
               className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
               style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}
             >
-              Wallet: {`${String(wallet.address.substring(0,10))}...` || "Invalid Address"}
+              Wallet: {`${String(wallet.address.substring(0, 10))}...` || "Invalid Address"}
             </button>
           ) : (
             <button
@@ -302,7 +306,7 @@ export default function BuildPage() {
 
       {/* Terminal Toggle Button */}
       <div className="fixed bottom-4 right-4 z-50 flex gap-2">
-        
+
         <Button
           onClick={() => setIsTerminalOpen(!isTerminalOpen)}
           className={`px-4 py-2 rounded-lg shadow-lg transition-all duration-200`}

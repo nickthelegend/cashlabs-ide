@@ -4,6 +4,18 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 
+// Global polyfill for localStorage to prevent SSR errors in broken environments
+if (typeof global !== 'undefined' && (!global.localStorage || typeof (global as any).localStorage.getItem !== 'function')) {
+  (global as any).localStorage = {
+    getItem: () => null,
+    setItem: () => { },
+    removeItem: () => { },
+    clear: () => { },
+    length: 0,
+    key: () => null,
+  };
+}
+
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {

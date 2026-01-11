@@ -24,12 +24,12 @@ class PyodideCompiler {
   async init(template: string) {
     console.log(`PyodideCompiler init for ${template} - not implemented`);
   }
-  
+
   async compile(filename: string, content: string) {
     console.log(`PyodideCompiler compile for ${filename} - not implemented`);
     return { error: 'PyodideCompiler not implemented', files: [] };
   }
-  
+
   async readFile(path: string) {
     console.log(`PyodideCompiler readFile for ${path} - not implemented`);
     return { content: '' };
@@ -73,19 +73,19 @@ async function saveProjectToDatabase(projectId: string, fileStructure: any, sele
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return false;
-    
+
     const response = await fetch(`/api/projects/${projectId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         file_structure: fileStructure,
         template: selectedTemplate
       })
     });
-    
+
     return response.ok;
   } catch (error) {
     console.error('Failed to save project to database:', error);
@@ -127,7 +127,7 @@ async function fetchWebContainerFileTree(fs: any, dir = ".", selectedTemplate: s
     const fullPath = dir === "." ? entryName : `${dir}/${entryName}`;
 
     if (entry.isDirectory()) {
-      tree[entryName] = { directory: await fetchWebContainerFileTree(fs, fullPath,selectedTemplate) };
+      tree[entryName] = { directory: await fetchWebContainerFileTree(fs, fullPath, selectedTemplate) };
     } else if (entry.isFile()) {
       tree[entryName] = { file: { contents: await fs.readFile(fullPath, "utf-8") } };
     }
@@ -215,27 +215,27 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const [showBuildPanel, setShowBuildPanel] = useState(false)
 
   const [isBuilding, setIsBuilding] = useState(false)
-  
 
-  
+
+
   // Update PuyaPy file tree with artifacts
   const updatePuyaPyFileTree = async (files: string[]) => {
     if (!pyodideCompiler) return;
-    
+
     // Create artifacts directory in file tree if it doesn't exist
     const updatedFiles = { ...currentFiles };
     if (!updatedFiles.artifacts) {
       updatedFiles.artifacts = { directory: {} };
     }
-    
+
     // Add artifact files to the tree
     const artifactExtensions = ['.teal', '.arc32.json', '.puya.map'];
-    const artifactFiles = files.filter(file => 
+    const artifactFiles = files.filter(file =>
       artifactExtensions.some(ext => file.endsWith(ext))
     );
-    
+
     const newFileContents = { ...fileContents };
-    
+
     for (const file of artifactFiles) {
       const fileName = file.split('/').pop();
       if (fileName) {
@@ -243,46 +243,46 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           // Get file content from Pyodide worker
           const result = await pyodideCompiler.readFile(file);
           const content = result.content || '';
-          
+
           updatedFiles.artifacts.directory[fileName] = {
             file: { contents: content }
           };
-          
+
           // Update file contents cache
           const artifactPath = `artifacts/${fileName}`;
           newFileContents[artifactPath] = content;
-          
 
-          
+
+
         } catch (error) {
           console.error(`Failed to read ${file}:`, error);
         }
       }
     }
-    
-    setCurrentFiles({...updatedFiles});
-    setFileContents({...newFileContents});
+
+    setCurrentFiles({ ...updatedFiles });
+    setFileContents({ ...newFileContents });
     handleTerminalOutput(`Added ${artifactFiles.length} artifact files to file tree`);
-    
+
     // Delayed file tree refresh
     setTimeout(() => {
-      setCurrentFiles({...updatedFiles});
+      setCurrentFiles({ ...updatedFiles });
     }, 2000);
   }
-  
+
   const handlePyTealBuild = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Compiling PyTeal contract...");
-    
+
     try {
       const contractFile = fileContents['contract.py'];
       if (!contractFile) {
         handleTerminalOutput("No contract.py file found.");
         return;
       }
-      
+
       console.log(`[BUILD] PyTeal compilation started`);
-      
+
       const response = await fetch('/api/compile', {
         method: 'POST',
         headers: {
@@ -293,30 +293,30 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           code: btoa(contractFile)
         })
       });
-      
+
       const result = await response.json();
       console.log(`[BUILD] PyTeal compilation result:`, result);
-      
+
       if (result.ok && result.files) {
         const updatedFiles = { ...currentFiles };
         if (!updatedFiles.artifacts) {
           updatedFiles.artifacts = { directory: {} };
         }
-        
+
         const newFileContents = { ...fileContents };
-        
+
         for (const [fileName, fileData] of Object.entries(result.files)) {
           const data = (fileData as any).data;
           const encoding = (fileData as any).encoding;
           const content = encoding === 'base64' ? atob(data) : data;
-          
+
           updatedFiles.artifacts.directory[fileName] = {
             file: { contents: content }
           };
-          
+
           newFileContents[`artifacts/${fileName}`] = content;
         }
-        
+
         setCurrentFiles(updatedFiles);
         setFileContents(newFileContents);
         handleTerminalOutput("PyTeal compilation completed successfully");
@@ -330,41 +330,41 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       setIsBuilding(false);
     }
   }
-  
+
   const updatePyTealFileTree = async (files: string[]) => {
     if (!pyodideCompiler) return;
-    
+
     const updatedFiles = { ...currentFiles };
     if (!updatedFiles.artifacts) {
       updatedFiles.artifacts = { directory: {} };
     }
-    
+
     const artifactExtensions = ['.teal', '.json'];
-    const artifactFiles = files.filter(file => 
+    const artifactFiles = files.filter(file =>
       artifactExtensions.some(ext => file.endsWith(ext))
     );
-    
+
     const newFileContents = { ...fileContents };
-    
+
     for (const file of artifactFiles) {
       const fileName = file.split('/').pop();
       if (fileName) {
         try {
           const result = await pyodideCompiler.readFile(file);
           const content = result.content || '';
-          
+
           updatedFiles.artifacts.directory[fileName] = {
             file: { contents: content }
           };
-          
+
           newFileContents[`artifacts/${fileName}`] = content;
-          
+
         } catch (error) {
           console.error(`Failed to read ${file}:`, error);
         }
       }
     }
-    
+
     setCurrentFiles(updatedFiles);
     setFileContents(newFileContents);
     handleTerminalOutput(`Added ${artifactFiles.length} artifact files to file tree`);
@@ -383,7 +383,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
   const { toast } = useToast();
   const [deployedContracts, setDeployedContracts] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
       try {
         return JSON.parse(localStorage.getItem("deployedContracts") || "[]");
       } catch {
@@ -404,7 +404,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       try {
         // Use initial files directly (no IndexedDB)
         const mergedFiles = initialFiles;
-        
+
         // Skip WebContainer for PuyaPy, PyTeal, and PuyaTs templates to save resources
         if (selectedTemplate === 'PuyaPy' || selectedTemplate === 'Pyteal' || selectedTemplate === 'PyTeal' || selectedTemplate === 'PuyaTs') {
           console.log(`Skipping WebContainer for ${selectedTemplate} template`);
@@ -413,7 +413,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           setIsWebContainerReady(true);
           return;
         }
-        
+
         const webcontainerInstance = await WebContainer.boot();
         await webcontainerInstance.mount(mergedFiles);
         setWebcontainer(webcontainerInstance);
@@ -427,19 +427,21 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
     initWebContainer();
 
-    const savedWallet = localStorage.getItem("algorand-wallet")
-    if (savedWallet) {
-      try {
-        const parsedWallet = JSON.parse(savedWallet)
-        if (parsedWallet && typeof parsedWallet.address === 'string') {
-          setWallet(parsedWallet)
-        } else {
-          console.error("Invalid wallet data in localStorage:", parsedWallet)
-          localStorage.removeItem("algorand-wallet") // Clear invalid data
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      const savedWallet = localStorage.getItem("algorand-wallet")
+      if (savedWallet) {
+        try {
+          const parsedWallet = JSON.parse(savedWallet)
+          if (parsedWallet && typeof parsedWallet.address === 'string') {
+            setWallet(parsedWallet)
+          } else {
+            console.error("Invalid wallet data in localStorage:", parsedWallet)
+            if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
+          }
+        } catch (error) {
+          console.error("Error parsing wallet from localStorage:", error)
+          if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
         }
-      } catch (error) {
-        console.error("Error parsing wallet from localStorage:", error)
-        localStorage.removeItem("algorand-wallet") // Clear corrupted data
       }
     }
 
@@ -472,7 +474,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
       setWallet(newWallet)
       localStorage.setItem("algorand-wallet", JSON.stringify(newWallet))
-      
+
       // Show funding instructions
       console.log("Wallet created! To fund with test ALGO, visit:")
       console.log(`https://testnet.algoexplorer.io/dispenser?addr=${newWallet.address}`)
@@ -483,7 +485,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
   const fundWallet = async () => {
     if (!wallet?.address) return
-    
+
     try {
       // Use Algorand TestNet faucet
       const response = await fetch("https://testnet-api.algonode.cloud/v2/transactions", {
@@ -502,7 +504,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           genesisHash: "SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=",
         }),
       })
-      
+
       if (response.ok) {
         console.log("Funding request submitted successfully")
       } else {
@@ -569,9 +571,9 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         return;
       }
       console.log(`File change detected: ${event} on ${filename}`);
-      
 
-      
+
+
       updateFileStructureFromWebContainer();
     });
 
@@ -589,9 +591,9 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       setActiveFile(filePath);
       return;
     }
-    
+
     if (!webcontainer) return;
-    
+
     try {
       await updateFileInWebContainer(webcontainer, filePath, "", selectedTemplate);
       // No need to call updateFileStructureFromWebContainer manually, watcher will pick it up
@@ -617,9 +619,9 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       }
       return;
     }
-    
+
     if (!webcontainer) return;
-    
+
     try {
       const content = await webcontainer.fs.readFile(oldPath, "utf-8");
       await webcontainer.fs.rm(oldPath);
@@ -643,7 +645,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       closeFile(filePath);
       return;
     }
-    
+
     if (!webcontainer) return;
     await webcontainer.fs.rm(filePath);
     closeFile(filePath);
@@ -654,7 +656,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       handleTerminalOutput("Install not needed for these templates.");
       return;
     }
-    
+
     if (!webcontainer) {
       handleTerminalOutput("WebContainer not ready.");
       return;
@@ -670,7 +672,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     }));
     const exitCode = await installProcess.exit;
     handleTerminalOutput(`Install process exited with code: ${exitCode}`);
-    
+
     // Run URL replacement after install for PuyaTs template
     // if (selectedTemplate === 'PuyaTs' && exitCode === 0) {
     //   setTimeout(async () => {
@@ -683,29 +685,29 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     //     }
     //   }, 3000);
     // }
-    
+
     setIsInstalling(false);
   };
 
   const handlePuyaTsBuild = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Compiling PuyaTs contract...");
-    
+
     try {
       const algoFiles = Object.keys(fileContents).filter(path => path.endsWith('.algo.ts'));
-      
+
       if (algoFiles.length === 0) {
         handleTerminalOutput("No .algo.ts files found.");
         return;
       }
-      
+
       for (const filePath of algoFiles) {
         const filename = filePath.split('/').pop();
         const code = fileContents[filePath];
-        
+
         handleTerminalOutput(`Compiling ${filename}...`);
         console.log(`[BUILD] PuyaTs compilation started for ${filename}`);
-        
+
         const response = await fetch('/api/compile', {
           method: 'POST',
           headers: {
@@ -717,30 +719,30 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
             code
           })
         });
-        
+
         const result = await response.json();
         console.log(`[BUILD] PuyaTs compilation result:`, result);
-        
+
         if (result.ok && result.files) {
           const updatedFiles = { ...currentFiles };
           if (!updatedFiles.artifacts) {
             updatedFiles.artifacts = { directory: {} };
           }
-          
+
           const newFileContents = { ...fileContents };
-          
+
           for (const [fileName, fileData] of Object.entries(result.files)) {
             const data = (fileData as any).data;
             const encoding = (fileData as any).encoding;
             const content = encoding === 'base64' ? atob(data) : data;
-            
+
             updatedFiles.artifacts.directory[fileName] = {
               file: { contents: content }
             };
-            
+
             newFileContents[`artifacts/${fileName}`] = content;
           }
-          
+
           setCurrentFiles(updatedFiles);
           setFileContents(newFileContents);
           handleTerminalOutput(`Successfully compiled ${filename}`);
@@ -759,22 +761,22 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const handleTealScriptBuild = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Compiling TealScript contract...");
-    
+
     try {
       const algoFiles = Object.keys(fileContents).filter(path => path.endsWith('.algo.ts'));
-      
+
       if (algoFiles.length === 0) {
         handleTerminalOutput("No .algo.ts files found.");
         return;
       }
-      
+
       for (const filePath of algoFiles) {
         const filename = filePath.split('/').pop();
         const code = fileContents[filePath];
-        
+
         handleTerminalOutput(`Compiling ${filename}...`);
         console.log(`[BUILD] TealScript compilation started for ${filename}`);
-        
+
         const response = await fetch('/api/compile', {
           method: 'POST',
           headers: {
@@ -786,18 +788,18 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
             code
           })
         });
-        
+
         const result = await response.json();
         console.log(`[BUILD] TealScript compilation result:`, result);
-        
+
         if (result.ok && result.result) {
           const updatedFiles = { ...currentFiles };
           if (!updatedFiles.artifacts) {
             updatedFiles.artifacts = { directory: {} };
           }
-          
+
           const newFileContents = { ...fileContents };
-          
+
           // Parse the plain text response and extract files
           const sections = result.result.split('=== ');
           for (const section of sections) {
@@ -805,17 +807,17 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
               const lines = section.split('\n');
               const fileName = lines[0].replace(' ===', '').trim();
               const content = lines.slice(1).join('\n').trim();
-              
+
               if (fileName && content) {
                 updatedFiles.artifacts.directory[fileName] = {
                   file: { contents: content }
                 };
-                
+
                 newFileContents[`artifacts/${fileName}`] = content;
               }
             }
           }
-          
+
           setCurrentFiles(updatedFiles);
           setFileContents(newFileContents);
           handleTerminalOutput(`Successfully compiled ${filename}`);
@@ -834,27 +836,27 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const handleBuild = async () => {
     setShowBuildPanel(true);
     console.log(`[BUILD] Starting build for template: ${selectedTemplate}`);
-    
+
     if (selectedTemplate === 'PuyaTs') {
       await handlePuyaTsBuild();
       return;
     }
-    
+
     if (selectedTemplate === 'PuyaPy') {
       await handlePuyaPyBuild();
       return;
     }
-    
+
     if (selectedTemplate === 'Pyteal' || selectedTemplate === 'PyTeal') {
       await handlePyTealBuild();
       return;
     }
-    
+
     if (selectedTemplate === 'TealScript') {
       await handleTealScriptBuild();
       return;
     }
-    
+
     if (!webcontainer) {
       handleTerminalOutput("WebContainer not ready.");
       return;
@@ -872,20 +874,20 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     handleTerminalOutput(`Build process exited with code: ${exitCode}`);
     setIsBuilding(false);
   };
-  
+
   const handlePuyaPyBuild = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Compiling PuyaPy contract...");
-    
+
     try {
       const contractFile = fileContents['contract.py'];
       if (!contractFile) {
         handleTerminalOutput("No contract.py file found.");
         return;
       }
-      
+
       console.log(`[BUILD] PuyaPy compilation started`);
-      
+
       const response = await fetch('/api/compile', {
         method: 'POST',
         headers: {
@@ -896,30 +898,30 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           code: btoa(contractFile)
         })
       });
-      
+
       const result = await response.json();
       console.log(`[BUILD] PuyaPy compilation result:`, result);
-      
+
       if (result.ok && result.files) {
         const updatedFiles = { ...currentFiles };
         if (!updatedFiles.artifacts) {
           updatedFiles.artifacts = { directory: {} };
         }
-        
+
         const newFileContents = { ...fileContents };
-        
+
         for (const [fileName, fileData] of Object.entries(result.files)) {
           const data = (fileData as any).data;
           const encoding = (fileData as any).encoding;
           const content = encoding === 'base64' ? atob(data) : data;
-          
+
           updatedFiles.artifacts.directory[fileName] = {
             file: { contents: content }
           };
-          
+
           newFileContents[`artifacts/${fileName}`] = content;
         }
-        
+
         setCurrentFiles(updatedFiles);
         setFileContents(newFileContents);
         handleTerminalOutput("PuyaPy compilation completed successfully");
@@ -939,7 +941,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       handleTerminalOutput("Tests not implemented for PuyaTs template yet.");
       return;
     }
-    
+
     if (!webcontainer) {
       handleTerminalOutput("WebContainer not ready.");
       return;
@@ -969,7 +971,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       handleTerminalOutput("Use the artifacts panel to deploy contracts for PuyaTs template.");
       return;
     }
-    
+
     if (!webcontainer) {
       handleTerminalOutput("WebContainer not ready.");
       return;
@@ -1000,7 +1002,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       handleTerminalOutput("Client generation not available for PuyaTs template.");
       return;
     }
-    
+
     if (!webcontainer) {
       handleTerminalOutput("WebContainer not ready.");
       return;
@@ -1042,12 +1044,12 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         const jsonData = JSON.stringify(currentFiles, null, 2);
         const blob = new Blob([jsonData], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        
+
         const a = document.createElement('a');
         a.href = url;
         a.download = `${selectedTemplate}-snapshot.json`;
         a.click();
-        
+
         URL.revokeObjectURL(url);
         handleTerminalOutput("Snapshot downloaded successfully.");
       } catch (error) {
@@ -1058,7 +1060,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       }
       return;
     }
-    
+
     if (!webcontainer) {
       handleTerminalOutput("WebContainer not ready.");
       return;
@@ -1071,17 +1073,17 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       console.log('Reading ALL files from WebContainer including node_modules...');
       const allFiles = await fetchWebContainerFileTreeForSnapshot(webcontainer.fs, ".");
       console.log('Files read successfully');
-      
+
       const jsonData = JSON.stringify(allFiles, null, 2);
       const blob = new Blob([jsonData], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      
+
       const a = document.createElement('a');
       a.href = url;
       a.download = `${selectedTemplate}-snapshot.json`;
       console.log('Triggering download for:', a.download);
       a.click();
-      
+
       URL.revokeObjectURL(url);
       handleTerminalOutput("Snapshot downloaded successfully.");
       console.log('Download triggered successfully');
@@ -1093,7 +1095,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     }
   }
 
-  
+
 
   // Resize handlers
   const handleSidebarMouseDown = (e: React.MouseEvent) => {
@@ -1177,7 +1179,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     try {
       const artifactPath = `artifacts/${filename}`;
       let fileContent: string;
-      
+
       if (selectedTemplate === 'PuyaPy' || selectedTemplate === 'Pyteal' || selectedTemplate === 'PuyaTs') {
         fileContent = fileContents[artifactPath] || '';
         if (!fileContent) {
@@ -1187,7 +1189,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         if (!webcontainer) return;
         fileContent = await webcontainer.fs.readFile(artifactPath, "utf-8");
       }
-      
+
       const appSpec = JSON.parse(fileContent);
 
       let contractSpec = appSpec;
@@ -1195,7 +1197,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         contractSpec = appSpec.contract;
       }
 
-      if(!wallet){
+      if (!wallet) {
         throw new Error("Wallet not connected");
       }
       const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
@@ -1214,10 +1216,10 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       });
 
       const deployResult = await appFactory.send.create({
-          sender: account.addr,
-          signer: algosdk.makeBasicAccountTransactionSigner(account),
-          method: "createApplication",
-          args: args
+        sender: account.addr,
+        signer: algosdk.makeBasicAccountTransactionSigner(account),
+        method: "createApplication",
+        args: args
       });
 
       console.log("Deploy result:", deployResult);
@@ -1261,7 +1263,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     try {
       const artifactPath = `artifacts/${filename}`;
       let fileContent: string;
-      
+
       if (selectedTemplate === 'PuyaPy' || selectedTemplate === 'Pyteal' || selectedTemplate === 'PuyaTs') {
         fileContent = fileContents[artifactPath] || '';
         if (!fileContent) {
@@ -1271,7 +1273,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         if (!webcontainer) return;
         fileContent = await webcontainer.fs.readFile(artifactPath, "utf-8");
       }
-      
+
       const appSpec = JSON.parse(fileContent);
 
       let contractSpec = appSpec;
@@ -1285,9 +1287,9 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         setCurrentDeployFilename(filename);
         setContractArgs(createMethod.args);
         const initialArgs = createMethod.args.map((arg: any) => {
-            if (arg.type.includes('uint')) return 0;
-            if (arg.type === 'address') return wallet?.address || '';
-            return '';
+          if (arg.type.includes('uint')) return 0;
+          if (arg.type === 'address') return wallet?.address || '';
+          return '';
         });
         setDeployArgs(initialArgs);
         setIsDeployModalOpen(true);
@@ -1301,17 +1303,17 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   };
   const saveProject = async () => {
     if (!projectId) return;
-    
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      
+
       // Get current file structure (excluding node_modules)
       let fileStructure = currentFiles;
       if (webcontainer) {
         fileStructure = await fetchWebContainerFileTree(webcontainer.fs, ".", selectedTemplate);
       }
-      
+
       const response = await fetch(`/api/projects/${projectId}`, {
         method: 'PUT',
         headers: {
@@ -1320,7 +1322,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         },
         body: JSON.stringify({ file_structure: fileStructure })
       });
-      
+
       if (response.ok) {
         handleTerminalOutput('Project saved successfully');
       } else {
@@ -1334,9 +1336,9 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
   const handleSave = async () => {
     if (!activeFile || !fileContents[activeFile]) return;
-    
+
     const content = fileContents[activeFile];
-    
+
     // For WebContainer templates, ensure file is synced
     if (webcontainer && selectedTemplate !== 'PuyaPy' && selectedTemplate !== 'Pyteal' && selectedTemplate !== 'PyTeal' && selectedTemplate !== 'PuyaTs') {
       try {
@@ -1390,7 +1392,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     try {
       const artifactPath = `artifacts/${selectedContract.artifact}`;
       let fileContent: string;
-      
+
       if (selectedTemplate === 'PuyaPy' || selectedTemplate === 'Pyteal' || selectedTemplate === 'PuyaTs') {
         fileContent = fileContents[artifactPath] || '';
         if (!fileContent) {
@@ -1400,10 +1402,10 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         if (!webcontainer) return;
         fileContent = await webcontainer.fs.readFile(artifactPath, "utf-8");
       }
-      
+
       const appSpec = JSON.parse(fileContent);
 
-      if(!wallet){
+      if (!wallet) {
         throw new Error("Wallet not connected");
       }
       const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
@@ -1424,8 +1426,8 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
       const appClient = algorandClient.client.getAppClientById({
         appSpec,
-        appId : BigInt(selectedContract.appId),
-        defaultSender : creator.address,
+        appId: BigInt(selectedContract.appId),
+        defaultSender: creator.address,
         defaultSigner: algosdk.makeBasicAccountTransactionSigner(account)
 
       });
@@ -1438,8 +1440,9 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       //   sender: creator.address, 
       //   signer: algosdk.makeBasicAccountTransactionSigner(account)
       // });
-      
-      const result = await appClient.send.call({method: selectedMethod.name, args: executeArgs,sender: creator.address, signer: algosdk.makeBasicAccountTransactionSigner(account),          populateAppCallResources: true,          staticFee: (2_000).microAlgo(),
+
+      const result = await appClient.send.call({
+        method: selectedMethod.name, args: executeArgs, sender: creator.address, signer: algosdk.makeBasicAccountTransactionSigner(account), populateAppCallResources: true, staticFee: (2_000).microAlgo(),
 
       })
 
@@ -1473,7 +1476,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
               className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
               style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}
             >
-              Wallet: {`${String(wallet.address.substring(0,10))}...` || "Invalid Address"}
+              Wallet: {`${String(wallet.address.substring(0, 10))}...` || "Invalid Address"}
             </button>
           ) : (
             <button
@@ -1567,7 +1570,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
                       onFileClose={closeFile}
                       onFileContentChange={async (filePath, content) => {
                         setFileContents((prev) => ({ ...prev, [filePath]: content }))
-                        
+
                         // For WebContainer templates, update WebContainer
                         if (webcontainer && selectedTemplate !== 'PuyaPy' && selectedTemplate !== 'Pyteal' && selectedTemplate !== 'PyTeal' && selectedTemplate !== 'PuyaTs') {
                           try {
@@ -1632,14 +1635,14 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
                             </button>
                           </div>
                           <div className="flex-1">
-                            <AIChat 
-                              title="" 
+                            <AIChat
+                              title=""
                               selectedTemplate={selectedTemplate}
                               activeFile={activeFile}
                               fileContent={activeFile ? fileContents[activeFile] : undefined}
                               onFileUpdate={async (filePath: string, content: string) => {
                                 setFileContents((prev) => ({ ...prev, [filePath]: content }));
-                                
+
                                 // Update WebContainer for supported templates
                                 if (webcontainer && selectedTemplate !== 'PuyaPy' && selectedTemplate !== 'Pyteal' && selectedTemplate !== 'PyTeal' && selectedTemplate !== 'PuyaTs') {
                                   try {

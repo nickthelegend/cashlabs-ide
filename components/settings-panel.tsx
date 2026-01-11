@@ -61,12 +61,16 @@ export function SettingsPanel() {
 
   useEffect(() => {
     // Load theme from localStorage on mount
-    const savedTheme = localStorage.getItem("algorand-ide-theme");
-    if (savedTheme) {
-      setSelectedTheme(savedTheme);
-      applyTheme(savedTheme);
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      const savedTheme = localStorage.getItem("algorand-ide-theme");
+      if (savedTheme) {
+        setSelectedTheme(savedTheme);
+        applyTheme(savedTheme);
+      } else {
+        applyTheme("dark"); // Apply default dark theme if no theme is saved
+      }
     } else {
-      applyTheme("dark"); // Apply default dark theme if no theme is saved
+      applyTheme("dark");
     }
   }, []);
 
@@ -86,7 +90,9 @@ export function SettingsPanel() {
     const newThemeId = event.target.value;
     setSelectedTheme(newThemeId);
     applyTheme(newThemeId);
-    localStorage.setItem("algorand-ide-theme", newThemeId);
+    if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+      localStorage.setItem("algorand-ide-theme", newThemeId);
+    }
   };
 
   return (

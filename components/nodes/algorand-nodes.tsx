@@ -19,13 +19,15 @@ export function AccountNode({ data, selected }: AlgorandNodeProps) {
     if (!data.config) {
       data.config = {};
     }
-    if (!data.config.mnemonic) {
-      const storedMnemonic = localStorage.getItem("mnemonic");
-      if (storedMnemonic) {
-        data.config.mnemonic = storedMnemonic;
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      if (!data.config.mnemonic) {
+        const storedMnemonic = localStorage.getItem("mnemonic");
+        if (storedMnemonic) {
+          data.config.mnemonic = storedMnemonic;
+        }
+      } else if (typeof localStorage.setItem === 'function') {
+        localStorage.setItem("mnemonic", data.config.mnemonic);
       }
-    } else {
-      localStorage.setItem("mnemonic", data.config.mnemonic);
     }
   }, [data.config]);
 

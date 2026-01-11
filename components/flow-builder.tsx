@@ -94,15 +94,17 @@ export function FlowBuilder({ type, onFlowChange }: FlowBuilderProps) {
 
       let config = getDefaultConfig(nodeType)
       if (nodeType === "account") {
-        const savedWallet = localStorage.getItem("algorand-wallet")
-        if (savedWallet) {
-          try {
-            const parsedWallet = JSON.parse(savedWallet)
-            if (parsedWallet && parsedWallet.mnemonic) {
-              config = { ...config, mnemonic: parsedWallet.mnemonic }
+        if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+          const savedWallet = localStorage.getItem("algorand-wallet")
+          if (savedWallet) {
+            try {
+              const parsedWallet = JSON.parse(savedWallet)
+              if (parsedWallet && parsedWallet.mnemonic) {
+                config = { ...config, mnemonic: parsedWallet.mnemonic }
+              }
+            } catch (error) {
+              console.error("Error parsing wallet from localStorage:", error)
             }
-          } catch (error) {
-            console.error("Error parsing wallet from localStorage:", error)
           }
         }
       }
@@ -134,7 +136,7 @@ export function FlowBuilder({ type, onFlowChange }: FlowBuilderProps) {
     [setNodes],
   )
 
-  
+
 
   // Initialize with different example nodes based on type
   useEffect(() => {

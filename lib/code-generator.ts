@@ -15,11 +15,13 @@ export const generateCode = (nodes: Node[], edges: Edge[]): string => {
   // Generate account setups
   let storedMnemonic = "";
   try {
-    const savedWallet = localStorage.getItem("algorand-wallet");
-    if (savedWallet) {
-      const parsedWallet = JSON.parse(savedWallet);
-      if (parsedWallet && parsedWallet.mnemonic) {
-        storedMnemonic = parsedWallet.mnemonic;
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      const savedWallet = localStorage.getItem("algorand-wallet");
+      if (savedWallet) {
+        const parsedWallet = JSON.parse(savedWallet);
+        if (parsedWallet && parsedWallet.mnemonic) {
+          storedMnemonic = parsedWallet.mnemonic;
+        }
       }
     }
   } catch (error) {

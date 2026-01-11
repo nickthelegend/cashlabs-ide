@@ -96,7 +96,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const [terminalOutput, setTerminalOutput] = useState<string[]>([]);
   const { toast } = useToast();
   const [deployedContracts, setDeployedContracts] = useState<any[]>(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
       try {
         return JSON.parse(localStorage.getItem("deployedContracts") || "[]");
       } catch {
@@ -111,19 +111,21 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     setFileContents(getAllFileContents(initialFiles));
     setIsReady(true);
 
-    const savedWallet = localStorage.getItem("algorand-wallet")
-    if (savedWallet) {
-      try {
-        const parsedWallet = JSON.parse(savedWallet)
-        if (parsedWallet && typeof parsedWallet.address === 'string') {
-          setWallet(parsedWallet)
-        } else {
-          console.error("Invalid wallet data in localStorage:", parsedWallet)
-          localStorage.removeItem("algorand-wallet")
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+      const savedWallet = localStorage.getItem("algorand-wallet")
+      if (savedWallet) {
+        try {
+          const parsedWallet = JSON.parse(savedWallet)
+          if (parsedWallet && typeof parsedWallet.address === 'string') {
+            setWallet(parsedWallet)
+          } else {
+            console.error("Invalid wallet data in localStorage:", parsedWallet)
+            if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
+          }
+        } catch (error) {
+          console.error("Error parsing wallet from localStorage:", error)
+          if (typeof localStorage.removeItem === 'function') localStorage.removeItem("algorand-wallet")
         }
-      } catch (error) {
-        console.error("Error parsing wallet from localStorage:", error)
-        localStorage.removeItem("algorand-wallet")
       }
     }
 
@@ -139,7 +141,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const loadContract = async (encoded: string) => {
     try {
       handleTerminalOutput("Loading contract...");
-      
+
       const response = await fetch('/api/load-contract', {
         method: 'POST',
         headers: {
@@ -147,19 +149,19 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         },
         body: JSON.stringify({ encoded })
       });
-      
+
       const result = await response.json();
-      
+
       if (result.success && result.code) {
         const updatedFiles = { ...currentFiles };
         const newFileContents = { ...fileContents };
-        
+
         updatedFiles[result.filename] = {
           file: { contents: result.code }
         };
-        
+
         newFileContents[result.filename] = result.code;
-        
+
         setCurrentFiles(updatedFiles);
         setFileContents(newFileContents);
         openFile(result.filename);
@@ -192,8 +194,10 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       }
 
       setWallet(newWallet)
-      localStorage.setItem("algorand-wallet", JSON.stringify(newWallet))
-      
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem("algorand-wallet", JSON.stringify(newWallet))
+      }
+
       console.log("Wallet created! To fund with test ALGO, visit:")
       console.log(`https://testnet.algoexplorer.io/dispenser?addr=${newWallet.address}`)
     } catch (error) {
@@ -251,44 +255,44 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const handlePuyaTsBuild = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Compiling PuyaTs contract...");
-    
+
     try {
       await new Promise(resolve => setTimeout(resolve, 100));
-      
+
       const updatedFiles = { ...currentFiles };
       updatedFiles.artifacts = { directory: {} };
-      
+
       const newFileContents = { ...fileContents };
       Object.keys(newFileContents).forEach(key => {
         if (key.startsWith('artifacts/') || key.startsWith('tmp/') || key.startsWith('cache/') || key.startsWith('dist/')) {
           delete newFileContents[key];
         }
       });
-      
+
       const algoFiles = Object.keys(fileContents).filter(path => path.endsWith('.algo.ts'));
-      
+
       if (algoFiles.length === 0) {
         handleTerminalOutput("No .algo.ts files found.");
         return;
       }
-      
+
       for (const filePath of algoFiles) {
         const filename = filePath.split('/').pop();
         const contractName = filename?.replace('.algo.ts', '') || 'contract';
         const code = fileContents[filePath];
-        
+
         console.log("=== COMPILING FILE ===");
         console.log(filePath);
         console.log(code);
-        
+
         if (!code || code.trim().length === 0) {
           handleTerminalOutput(`Skipping empty file: ${filePath}`);
           continue;
         }
-        
+
         handleTerminalOutput(`Compiling ${filePath}...`);
         console.log(`[BUILD] PuyaTs compilation started for ${filePath}`);
-        
+
         const response = await fetch('/api/compile', {
           method: 'POST',
           headers: {
@@ -302,22 +306,22 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
             forceFresh: true
           })
         });
-        
+
         const result = await response.json();
         console.log(`[BUILD] PuyaTs compilation result:`, result);
-        
+
         if (result.ok && result.files) {
           for (const [fileName, fileData] of Object.entries(result.files)) {
             const data = (fileData as any).data;
             const encoding = (fileData as any).encoding;
             const content = encoding === 'base64' ? atob(data) : data;
-            
+
             const uniqueFileName = fileName.replace(/^[^.]+/, contractName);
-            
+
             updatedFiles.artifacts.directory[uniqueFileName] = {
               file: { contents: content }
             };
-            
+
             newFileContents[`artifacts/${uniqueFileName}`] = content;
           }
           handleTerminalOutput(`Successfully compiled ${filePath}`);
@@ -325,7 +329,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           handleTerminalOutput(`Failed to compile ${filePath}: ${result.error || 'Unknown error'}`);
         }
       }
-      
+
       setCurrentFiles(updatedFiles);
       setFileContents(newFileContents);
     } catch (error: any) {
@@ -339,22 +343,22 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const handleTealScriptBuild = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Compiling TealScript contract...");
-    
+
     try {
       const algoFiles = Object.keys(fileContents).filter(path => path.endsWith('.algo.ts'));
-      
+
       if (algoFiles.length === 0) {
         handleTerminalOutput("No .algo.ts files found.");
         return;
       }
-      
+
       for (const filePath of algoFiles) {
         const filename = filePath.split('/').pop();
         const code = fileContents[filePath];
-        
+
         handleTerminalOutput(`Compiling ${filename}...`);
         console.log(`[BUILD] TealScript compilation started for ${filename}`);
-        
+
         const response = await fetch('/api/compile', {
           method: 'POST',
           headers: {
@@ -366,35 +370,35 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
             code
           })
         });
-        
+
         const result = await response.json();
         console.log(`[BUILD] TealScript compilation result:`, result);
-        
+
         if (result.ok && result.result) {
           const updatedFiles = { ...currentFiles };
           if (!updatedFiles.artifacts) {
             updatedFiles.artifacts = { directory: {} };
           }
-          
+
           const newFileContents = { ...fileContents };
-          
+
           const sections = result.result.split('=== ');
           for (const section of sections) {
             if (section.trim()) {
               const lines = section.split('\n');
               const fileName = lines[0].replace(' ===', '').trim();
               const content = lines.slice(1).join('\n').trim();
-              
+
               if (fileName && content) {
                 updatedFiles.artifacts.directory[fileName] = {
                   file: { contents: content }
                 };
-                
+
                 newFileContents[`artifacts/${fileName}`] = content;
               }
             }
           }
-          
+
           setCurrentFiles(updatedFiles);
           setFileContents(newFileContents);
           handleTerminalOutput(`Successfully compiled ${filename}`);
@@ -413,16 +417,16 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const handlePuyaPyBuild = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Compiling PuyaPy contract...");
-    
+
     try {
       const contractFile = fileContents['contract.py'];
       if (!contractFile) {
         handleTerminalOutput("No contract.py file found.");
         return;
       }
-      
+
       console.log(`[BUILD] PuyaPy compilation started`);
-      
+
       const response = await fetch('/api/compile', {
         method: 'POST',
         headers: {
@@ -433,30 +437,30 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           code: btoa(contractFile)
         })
       });
-      
+
       const result = await response.json();
       console.log(`[BUILD] PuyaPy compilation result:`, result);
-      
+
       if (result.ok && result.files) {
         const updatedFiles = { ...currentFiles };
         if (!updatedFiles.artifacts) {
           updatedFiles.artifacts = { directory: {} };
         }
-        
+
         const newFileContents = { ...fileContents };
-        
+
         for (const [fileName, fileData] of Object.entries(result.files)) {
           const data = (fileData as any).data;
           const encoding = (fileData as any).encoding;
           const content = encoding === 'base64' ? atob(data) : data;
-          
+
           updatedFiles.artifacts.directory[fileName] = {
             file: { contents: content }
           };
-          
+
           newFileContents[`artifacts/${fileName}`] = content;
         }
-        
+
         setCurrentFiles(updatedFiles);
         setFileContents(newFileContents);
         handleTerminalOutput("PuyaPy compilation completed successfully");
@@ -474,16 +478,16 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const handlePyTealBuild = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Compiling PyTeal contract...");
-    
+
     try {
       const contractFile = fileContents['contract.py'];
       if (!contractFile) {
         handleTerminalOutput("No contract.py file found.");
         return;
       }
-      
+
       console.log(`[BUILD] PyTeal compilation started`);
-      
+
       const response = await fetch('/api/compile', {
         method: 'POST',
         headers: {
@@ -494,30 +498,30 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           code: btoa(contractFile)
         })
       });
-      
+
       const result = await response.json();
       console.log(`[BUILD] PyTeal compilation result:`, result);
-      
+
       if (result.ok && result.files) {
         const updatedFiles = { ...currentFiles };
         if (!updatedFiles.artifacts) {
           updatedFiles.artifacts = { directory: {} };
         }
-        
+
         const newFileContents = { ...fileContents };
-        
+
         for (const [fileName, fileData] of Object.entries(result.files)) {
           const data = (fileData as any).data;
           const encoding = (fileData as any).encoding;
           const content = encoding === 'base64' ? atob(data) : data;
-          
+
           updatedFiles.artifacts.directory[fileName] = {
             file: { contents: content }
           };
-          
+
           newFileContents[`artifacts/${fileName}`] = content;
         }
-        
+
         setCurrentFiles(updatedFiles);
         setFileContents(newFileContents);
         handleTerminalOutput("PyTeal compilation completed successfully");
@@ -535,27 +539,27 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const handleBuild = async () => {
     setShowBuildPanel(true);
     console.log(`[BUILD] Starting build for template: ${selectedTemplate}`);
-    
+
     if (selectedTemplate === 'PuyaTs') {
       await handlePuyaTsBuild();
       return;
     }
-    
+
     if (selectedTemplate === 'PuyaPy') {
       await handlePuyaPyBuild();
       return;
     }
-    
+
     if (selectedTemplate === 'Pyteal' || selectedTemplate === 'PyTeal') {
       await handlePyTealBuild();
       return;
     }
-    
+
     if (selectedTemplate === 'TealScript') {
       await handleTealScriptBuild();
       return;
     }
-    
+
     handleTerminalOutput("No build process needed for this template.");
   };
 
@@ -570,21 +574,21 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
   const handleGenerateClient = async () => {
     setIsBuilding(true);
     handleTerminalOutput("Generating client...");
-    
+
     try {
       const arc32Files = Object.keys(fileContents).filter(path => path.endsWith('.arc32.json'));
-      
+
       if (arc32Files.length === 0) {
         handleTerminalOutput("No .arc32.json files found.");
         return;
       }
-      
+
       for (const filePath of arc32Files) {
         const arc32Content = fileContents[filePath];
         const arc32Json = JSON.parse(arc32Content);
-        
+
         console.log(`[BUILD] Generating client for ${filePath}`);
-        
+
         const response = await fetch('/api/compile', {
           method: 'POST',
           headers: {
@@ -595,30 +599,30 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
             arc32Json
           })
         });
-        
+
         const result = await response.json();
         console.log(`[BUILD] Client generation result:`, result);
-        
+
         if (result.ok && result.files) {
           const updatedFiles = { ...currentFiles };
           if (!updatedFiles.clients) {
             updatedFiles.clients = { directory: {} };
           }
-          
+
           const newFileContents = { ...fileContents };
-          
+
           for (const [fileName, fileData] of Object.entries(result.files)) {
             const data = (fileData as any).data;
             const encoding = (fileData as any).encoding;
             const content = encoding === 'base64' ? atob(data) : data;
-            
+
             updatedFiles.clients.directory[fileName] = {
               file: { contents: content }
             };
-            
+
             newFileContents[`clients/${fileName}`] = content;
           }
-          
+
           setCurrentFiles(updatedFiles);
           setFileContents(newFileContents);
           handleTerminalOutput(`Successfully generated client for ${filePath}`);
@@ -649,12 +653,12 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       const jsonData = JSON.stringify(currentFiles, null, 2);
       const blob = new Blob([jsonData], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
-      
+
       const a = document.createElement('a');
       a.href = url;
       a.download = `${selectedTemplate}-snapshot.json`;
       a.click();
-      
+
       URL.revokeObjectURL(url);
       handleTerminalOutput("Snapshot downloaded successfully.");
     } catch (error) {
@@ -675,7 +679,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       if (!fileContent) {
         throw new Error(`Artifact file ${filename} not found`);
       }
-      
+
       const appSpec = JSON.parse(fileContent);
 
       let contractSpec = appSpec;
@@ -683,7 +687,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         contractSpec = appSpec.contract;
       }
 
-      if(!wallet){
+      if (!wallet) {
         throw new Error("Wallet not connected");
       }
       const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
@@ -703,7 +707,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
       const hasBareCreate = appSpec.bare_call_config?.no_op === 'CREATE';
       const hasCreateMethod = appSpec.hints?.['createApplication()void'];
-      
+
       let deployResult;
       if (hasBareCreate) {
         deployResult = await (appFactory.send as any).bare.create({
@@ -743,18 +747,23 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         time: Date.now(),
         methods: contractSpec.methods,
       };
-      const prev = JSON.parse(localStorage.getItem("deployedContracts") || "[]");
+      const prevData = (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function')
+        ? localStorage.getItem("deployedContracts")
+        : "[]";
+      const prev = JSON.parse(prevData || "[]");
       const updated = [deployed, ...prev];
-      localStorage.setItem("deployedContracts", JSON.stringify(updated));
+      if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+        localStorage.setItem("deployedContracts", JSON.stringify(updated));
+      }
       setDeployedContracts(updated);
       setDeployedAppId(deployed.appId);
       setDeployStatus('success');
     } catch (error: any) {
       console.error("Deploy artifact failed:", error);
       setDeployStatus('error');
-      toast({ 
-        title: "❌ Deployment Failed", 
-        description: error.message || String(error), 
+      toast({
+        title: "❌ Deployment Failed",
+        description: error.message || String(error),
         variant: "destructive",
         duration: 5000
       });
@@ -772,7 +781,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       if (!fileContent) {
         throw new Error(`Artifact file ${filename} not found`);
       }
-      
+
       const appSpec = JSON.parse(fileContent);
       console.log("Parsed appSpec:", appSpec);
 
@@ -787,7 +796,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         return;
       }
 
-      const createMethod = contractSpec.methods.find((m: any) => 
+      const createMethod = contractSpec.methods.find((m: any) =>
         m && (m.name === "createApplication" || m.actions?.create === true)
       );
 
@@ -795,10 +804,10 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         setCurrentDeployFilename(filename);
         setContractArgs(createMethod.args);
         const initialArgs = createMethod.args.map((arg: any) => {
-            const argType = arg?.type || arg?.struct || '';
-            if (typeof argType === 'string' && argType.includes('uint')) return 0;
-            if (argType === 'address') return wallet?.address || '';
-            return '';
+          const argType = arg?.type || arg?.struct || '';
+          if (typeof argType === 'string' && argType.includes('uint')) return 0;
+          if (argType === 'address') return wallet?.address || '';
+          return '';
         });
         setDeployArgs(initialArgs);
         setIsDeployModalOpen(true);
@@ -808,9 +817,9 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
     } catch (error: any) {
       console.error("Deploy artifact failed:", error);
       setDeployStatus('error');
-      toast({ 
-        title: "❌ Deployment Failed", 
-        description: error.message || String(error), 
+      toast({
+        title: "❌ Deployment Failed",
+        description: error.message || String(error),
         variant: "destructive",
         duration: 5000
       });
@@ -819,11 +828,11 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
   const saveProject = async () => {
     if (!projectId) return;
-    
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
-      
+
       const response = await fetch(`/api/projects/${projectId}`, {
         method: 'PUT',
         headers: {
@@ -832,7 +841,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
         },
         body: JSON.stringify({ file_structure: currentFiles })
       });
-      
+
       if (response.ok) {
         handleTerminalOutput('Project saved successfully');
       } else {
@@ -846,7 +855,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
   const handleSave = async () => {
     if (!activeFile || !fileContents[activeFile]) return;
-    
+
     try {
       handleTerminalOutput(`Saved: ${activeFile}`);
       if (window && (window as any).clearUnsavedFile) {
@@ -882,10 +891,10 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
       if (!fileContent) {
         throw new Error(`Artifact file ${selectedContract.artifact} not found`);
       }
-      
+
       const appSpec = JSON.parse(fileContent);
 
-      if(!wallet){
+      if (!wallet) {
         throw new Error("Wallet not connected");
       }
       const account = algosdk.mnemonicToSecretKey(wallet.mnemonic);
@@ -899,15 +908,15 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
 
       const appClient = algorandClient.client.getAppClientById({
         appSpec,
-        appId : BigInt(selectedContract.appId),
-        defaultSender : creator.address,
+        appId: BigInt(selectedContract.appId),
+        defaultSender: creator.address,
         defaultSigner: algosdk.makeBasicAccountTransactionSigner(account)
       });
 
       const result = await appClient.send.call({
-        method: selectedMethod.name, 
+        method: selectedMethod.name,
         args: executeArgs,
-        sender: creator.address, 
+        sender: creator.address,
         signer: algosdk.makeBasicAccountTransactionSigner(account),
         populateAppCallResources: true,
         staticFee: (2_000).microAlgo(),
@@ -943,7 +952,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
               className="px-3 py-1.5 rounded text-xs font-medium transition-colors"
               style={{ backgroundColor: "var(--button-color)", color: "var(--text-color)" }}
             >
-              Wallet: {`${String(wallet.address.substring(0,10))}...` || "Invalid Address"}
+              Wallet: {`${String(wallet.address.substring(0, 10))}...` || "Invalid Address"}
             </button>
           ) : (
             <button
@@ -1085,8 +1094,8 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
                     <ResizableHandle />
                     <ResizablePanel defaultSize={50} minSize={30}>
                       <div className="h-full border-t border-l" style={{ backgroundColor: "var(--background-color)", borderColor: "var(--border-color)" }}>
-                        <AIChat 
-                          title="AI Chat" 
+                        <AIChat
+                          title="AI Chat"
                           selectedTemplate={selectedTemplate}
                           activeFile={activeFile}
                           fileContent={activeFile ? fileContents[activeFile] : undefined}
@@ -1139,7 +1148,7 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
           </>
         )}
       </ResizablePanelGroup>
-      
+
       <Dialog open={isDeployModalOpen} onOpenChange={setIsDeployModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1159,23 +1168,23 @@ export default function AlgorandIDE({ initialFiles, selectedTemplate, selectedTe
                   const argType = arg.type || arg.struct || 'string';
                   const isUint = typeof argType === 'string' && argType.includes('uint');
                   return (
-                  <div className="grid grid-cols-4 items-center gap-4" key={arg.name || index}>
-                    <Label htmlFor={`arg-${index}`} className="text-right">
-                      {arg.name} ({argType})
-                    </Label>
-                    <Input
-                      id={`arg-${index}`}
-                      value={deployArgs[index] || ''}
-                      onChange={(e) => {
-                        const newArgs = [...deployArgs];
-                        const value = isUint ? Number(e.target.value) : e.target.value;
-                        newArgs[index] = value;
-                        setDeployArgs(newArgs);
-                      }}
-                      className="col-span-3"
-                      type={isUint ? 'number' : 'text'}
-                    />
-                  </div>
+                    <div className="grid grid-cols-4 items-center gap-4" key={arg.name || index}>
+                      <Label htmlFor={`arg-${index}`} className="text-right">
+                        {arg.name} ({argType})
+                      </Label>
+                      <Input
+                        id={`arg-${index}`}
+                        value={deployArgs[index] || ''}
+                        onChange={(e) => {
+                          const newArgs = [...deployArgs];
+                          const value = isUint ? Number(e.target.value) : e.target.value;
+                          newArgs[index] = value;
+                          setDeployArgs(newArgs);
+                        }}
+                        className="col-span-3"
+                        type={isUint ? 'number' : 'text'}
+                      />
+                    </div>
                   );
                 })}
               </div>
