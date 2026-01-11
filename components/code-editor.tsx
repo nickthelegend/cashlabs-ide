@@ -23,6 +23,7 @@ interface CodeEditorProps {
 
 const getFileIcon = (filename: string) => {
   if (filename.endsWith(".py")) return "🐍"
+  if (filename.endsWith(".cash")) return "₿"
   if (filename.endsWith(".md")) return "📝"
   if (filename.endsWith(".json")) return "⚙️"
   if (filename.endsWith(".txt")) return "📄"
@@ -31,6 +32,7 @@ const getFileIcon = (filename: string) => {
 
 const getLanguage = (filename: string) => {
   if (filename.endsWith(".py")) return "python"
+  if (filename.endsWith(".cash")) return "cashscript"
   if (filename.endsWith(".ts")) return "typescript"
   if (filename.endsWith(".tsx")) return "typescript"
   if (filename.endsWith(".js")) return "javascript"
@@ -68,13 +70,13 @@ export function CodeEditor({
   const handleEditorDidMount = (editor: any, monaco: any) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
-    
+
     // Setup Monaco types (only once)
     if (!typesSetup) {
       setupMonacoTypes(monaco, template);
       setTypesSetup(true);
     }
-    
+
     // Define custom theme
     monaco.editor.defineTheme('dracula', {
       ...dracula
@@ -95,7 +97,7 @@ export function CodeEditor({
     if (editorRef.current && monacoRef.current && activeFile) {
       const editor = editorRef.current;
       const monaco = monacoRef.current;
-      
+
       // Remove existing command and add new one
       editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, async () => {
         await onSave();
@@ -115,7 +117,7 @@ export function CodeEditor({
       return newSet;
     });
   };
-  
+
   // Block browser Ctrl+S and expose clearUnsavedFile function
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -126,11 +128,11 @@ export function CodeEditor({
     };
 
     document.addEventListener("keydown", handler);
-    
+
     if (window) {
       (window as any).clearUnsavedFile = clearUnsavedFile;
     }
-    
+
     return () => document.removeEventListener("keydown", handler);
   }, []);
 
@@ -154,11 +156,10 @@ export function CodeEditor({
           {openFiles.map((file) => (
             <div
               key={file}
-              className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer border-r border-[#3e3e42] min-w-0 group hover:bg-[#37373d] transition-colors ${
-                activeFile === file
+              className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer border-r border-[#3e3e42] min-w-0 group hover:bg-[#37373d] transition-colors ${activeFile === file
                   ? "bg-[#1e1e1e] text-white border-t-2 border-t-[#0e639c]"
                   : "bg-[#2d2d30] text-[#cccccc]"
-              }`}
+                }`}
               onClick={() => onFileSelect(file)}
             >
               <span className="text-xs">{getFileIcon(file.split("/").pop() || "")}</span>

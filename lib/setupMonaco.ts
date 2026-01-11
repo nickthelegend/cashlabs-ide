@@ -1,5 +1,130 @@
 import * as monaco from "monaco-editor";
 
+function setupCashScript(monaco: any) {
+  // Register a new language
+  monaco.languages.register({ id: 'cashscript' });
+
+  // Define the tokens for the language
+  monaco.languages.setMonarchTokensProvider('cashscript', {
+    defaultToken: '',
+    tokenPostfix: '.cash',
+
+    keywords: [
+      'contract', 'function', 'constructor', 'parameter', 'require',
+      'if', 'else', 'new', 'this', 'return', 'pragma', 'cashscript'
+    ],
+
+    typeKeywords: [
+      'int', 'bool', 'string', 'pubkey', 'sig', 'datasig', 'byte',
+      'bytes', 'bytes1', 'bytes2', 'bytes3', 'bytes4', 'bytes8', 'bytes16', 'bytes20', 'bytes32'
+    ],
+
+    operators: [
+      '=', '>', '<', '!', '~', '?', ':',
+      '==', '<=', '>=', '!=', '&&', '||', '++', '--',
+      '+', '-', '*', '/', '&', '|', '^', '%', '<<', '>>', '>>>',
+      '+=', '-=', '*=', '/=', '&=', '|=', '^=', '%=', '<<=', '>>=', '>>>='
+    ],
+
+    // symbols
+    symbols: /[=><!~?:&|+\-*\/\^%]+/,
+    escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
+
+    tokenizer: {
+      root: [
+        // Identifiers and keywords
+        [/[a-zA-Z_$][\w$]*/, {
+          cases: {
+            '@typeKeywords': 'keyword.type',
+            '@keywords': 'keyword',
+            '@default': 'identifier'
+          }
+        }],
+
+        // Whitespace
+        { include: '@whitespace' },
+
+        // Delimiters
+        [/[{}()\[\]]/, '@brackets'],
+        [/[<>](?!@symbols)/, '@brackets'],
+        [/@symbols/, {
+          cases: {
+            '@operators': 'operator',
+            '@default': ''
+          }
+        }],
+
+        // Numbers
+        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+        [/0[xX][0-9a-fA-F]+/, 'number.hex'],
+        [/\d+/, 'number'],
+
+        // Strings
+        [/"([^"\\]|\\.)*$/, 'string.invalid'],  // non-terminated string
+        [/"/, 'string', '@string'],
+
+        // Characters
+        [/'([^'\\]|\\.)*$/, 'string.invalid'],  // non-terminated string
+        [/'/, 'string', '@character'],
+      ],
+
+      whitespace: [
+        [/[ \t\r\n]+/, 'white'],
+        [/\/\*/, 'comment', '@comment'],
+        [/\/\/.*$/, 'comment'],
+      ],
+
+      comment: [
+        [/[^\/*]+/, 'comment'],
+        [/\/\*/, 'comment', '@push'],    // nested comment
+        ["\\*/", 'comment', '@pop'],
+        [/[\/*]/, 'comment']
+      ],
+
+      string: [
+        [/[^\\"]+/, 'string'],
+        [/@escapes/, 'string.escape'],
+        [/\\./, 'string.escape.invalid'],
+        [/"/, 'string', '@pop']
+      ],
+
+      character: [
+        [/[^\\']+/, 'string'],
+        [/@escapes/, 'string.escape'],
+        [/\\./, 'string.escape.invalid'],
+        [/'/, 'string', '@pop']
+      ],
+    },
+  });
+
+  // Configuration for the language
+  monaco.languages.setLanguageConfiguration('cashscript', {
+    comments: {
+      lineComment: '//',
+      blockComment: ['/*', '*/'],
+    },
+    brackets: [
+      ['{', '}'],
+      ['[', ']'],
+      ['(', ')'],
+    ],
+    autoClosingPairs: [
+      { open: '{', close: '}' },
+      { open: '[', close: ']' },
+      { open: '(', close: ')' },
+      { open: '"', close: '"' },
+      { open: "'", close: "'" },
+    ],
+    surroundingPairs: [
+      { open: '{', close: '}' },
+      { open: '[', close: ']' },
+      { open: '(', close: ')' },
+      { open: '"', close: '"' },
+      { open: "'", close: "'" },
+    ],
+  });
+}
+
 // Type declarations for webpack require.context
 declare const require: {
   context: (directory: string, useSubdirectories: boolean, regExp: RegExp) => {
@@ -8,7 +133,6 @@ declare const require: {
   };
 };
 
-type Template = 'pyteal' | 'tealscript' | 'puyapy' | 'puyats';
 
 const CDN_BASE = 'https://cdn.jsdelivr.net/npm/@algorandfoundation/algorand-typescript';
 
@@ -198,8 +322,13 @@ function setupPuyaPyIntelliSense(monaco: any) {
   console.log('PuyaPy IntelliSense setup complete');
 }
 
+type Template = 'pyteal' | 'tealscript' | 'puyapy' | 'puyats' | 'cashscript';
+
 export function setupMonacoTypes(monaco: any, template?: Template) {
   console.log('Setting up Monaco types for template:', template);
+
+  // Register CashScript support
+  setupCashScript(monaco);
 
   // Load template-specific types and IntelliSense
   if (template === 'puyats') {

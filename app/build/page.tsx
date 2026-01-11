@@ -24,9 +24,9 @@ export default function BuildPage() {
   const [isTerminalOpen, setIsTerminalOpen] = useState(false)
   const [terminalOutput, setTerminalOutput] = useState("")
   const [activeTab, setActiveTab] = useState("transactions")
-  const [nodes, setNodes] = useState([])
-  const [edges, setEdges] = useState([])
-  const [selectedNode, setSelectedNode] = useState(null)
+  const [nodes, setNodes] = useState<any[]>([])
+  const [edges, setEdges] = useState<any[]>([])
+  const [selectedNode, setSelectedNode] = useState<any>(null)
   const [showWallet, setShowWallet] = useState(false)
   const [wallet, setWallet] = useState<Wallet | null>(null)
 

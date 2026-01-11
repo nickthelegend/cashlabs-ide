@@ -38,6 +38,7 @@ import { type Edge } from "@xyflow/react"
 interface FlowBuilderProps {
   type: "transaction"
   onFlowChange?: (nodes: Node[], edges: Edge[]) => void
+  onNodeSelect?: (node: Node | null) => void
 }
 
 const snapGrid: [number, number] = [20, 20]
@@ -57,9 +58,9 @@ const nodeTypes: NodeTypes = {
   assetFreeze: AssetFreezeNode,
 }
 
-export function FlowBuilder({ type, onFlowChange }: FlowBuilderProps) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([])
-  const [edges, setEdges, onEdgesChange] = useEdgesState([])
+export function FlowBuilder({ type, onFlowChange, onNodeSelect }: FlowBuilderProps) {
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [reactFlowInstance, setReactFlowInstance] = useState<any>(null)
   const [selectedNode, setSelectedNode] = useState<Node | null>(null)
 
@@ -95,7 +96,7 @@ export function FlowBuilder({ type, onFlowChange }: FlowBuilderProps) {
       let config = getDefaultConfig(nodeType)
       if (nodeType === "account") {
         if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
-          const savedWallet = localStorage.getItem("algorand-wallet")
+          const savedWallet = localStorage.getItem("bch-wallet")
           if (savedWallet) {
             try {
               const parsedWallet = JSON.parse(savedWallet)
@@ -127,7 +128,8 @@ export function FlowBuilder({ type, onFlowChange }: FlowBuilderProps) {
 
   const onNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
     setSelectedNode(node)
-  }, [])
+    if (onNodeSelect) onNodeSelect(node)
+  }, [onNodeSelect])
 
   const onUpdateNode = useCallback(
     (nodeId: string, data: any) => {
@@ -219,7 +221,10 @@ export function FlowBuilder({ type, onFlowChange }: FlowBuilderProps) {
       {selectedNode && (
         <NodePropertiesPanel
           selectedNode={selectedNode}
-          onClose={() => setSelectedNode(null)}
+          onClose={() => {
+            setSelectedNode(null)
+            if (onNodeSelect) onNodeSelect(null)
+          }}
           onUpdateNode={onUpdateNode}
         />
       )}

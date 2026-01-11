@@ -9,7 +9,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  
+
   headers: async () => [
     {
       source: '/(.*)',
@@ -19,9 +19,9 @@ const nextConfig = {
       ],
     },
   ],
-  
+
   turbopack: {},
-  
+
   webpack: (config, { isServer, dev }) => {
     // Only ignore problematic imports during server-side build
     if (isServer) {
@@ -31,7 +31,7 @@ const nextConfig = {
         './types/@algorandfoundation/algorand-typescript': false,
       };
     }
-    
+
     // Handle .d.ts files properly
     if (!isServer) {
       config.module.rules.push({
@@ -39,7 +39,7 @@ const nextConfig = {
         type: 'asset/source',
       });
     }
-    
+
     return config;
   },
 }
