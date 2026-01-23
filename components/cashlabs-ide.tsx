@@ -106,6 +106,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
   const [isWCQrModalOpen, setIsWCQrModalOpen] = useState(false);
   const [wcClient, setWcClient] = useState<any>(null);
   const [wcSession, setWcSession] = useState<any>(null);
+  const [wcNetwork, setWcNetwork] = useState<"mainnet" | "chipnet">("chipnet");
 
   // Layout state
   const [showAIChat, setShowAIChat] = useState(false)
@@ -249,7 +250,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
           name: "CashLabs IDE",
           description: "Bitcoin Cash Smart Contract IDE",
           url: typeof window !== 'undefined' ? window.location.origin : "https://cashlabs.io",
-          icons: ["https://cashlabs.io/icon.png"],
+          icons: ["https://cashlabs.dev/icon.png"],
         },
       });
       setWcClient(client);
@@ -273,13 +274,22 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     const client = await initWalletConnect();
     if (!client) return;
 
+    const connectedChain = wcNetwork === "mainnet" ? "bch:bitcoincash" : "bch:bchtest";
+
     try {
       const { uri, approval } = await client.connect({
         requiredNamespaces: {
           bch: {
-            methods: ["bch_signTransaction", "bch_signMessage"],
-            chains: ["bch:chipnet"],
-            events: ["accountsChanged", "chainChanged"],
+            methods: ['bch_getAddresses', 'bch_signTransaction', 'bch_signMessage'],
+            chains: [connectedChain],
+            events: ['addressesChanged'],
+          },
+        },
+        optionalNamespaces: {
+          bch: {
+            methods: ['bch_getAddresses', 'bch_signTransaction', 'bch_signMessage'],
+            chains: ["bch:bitcoincash", "bch:bchtest", "bch:chipnet", "bch:testnet"],
+            events: ['addressesChanged', "accountsChanged", "chainChanged"],
           },
         },
       });
@@ -294,7 +304,10 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       setIsWCQrModalOpen(false);
       setIsConnectModalOpen(false);
 
-      const address = session.namespaces.bch.accounts[0].split(":")[2];
+      const account = session.namespaces.bch.accounts[0];
+      const [namespace, reference, address] = account.split(":");
+      const approvedChain = `${namespace}:${reference}`;
+
       const newWallet: Wallet = {
         address,
         balance: 0,
@@ -305,8 +318,8 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         type: 'walletconnect'
       };
       setWallet(newWallet);
-      localStorage.setItem("bch-wallet", JSON.stringify(newWallet));
-      handleTerminalOutput(`✅ Connected via WalletConnect: ${address}`);
+      // Store approved chain in memory/storage if needed, or just extract from session later
+      handleTerminalOutput(`✅ Connected via WalletConnect: ${address} (${approvedChain})`);
     } catch (e: any) {
       console.error("WC Connection error:", e);
       setIsWCQrModalOpen(false);
@@ -900,9 +913,12 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
         if (!session) throw new Error("No WalletConnect session found. Please reconnect.");
 
+        // Use the first approved chain from the session
+        const chainId = session.namespaces.bch.chains?.[0] || session.namespaces.bch.accounts?.[0]?.split(":").slice(0, 2).join(":") || "bch:bitcoincash";
+
         const result: any = await client.request({
           topic: session.topic,
-          chainId: "bch:chipnet",
+          chainId: chainId,
           request: {
             method: "bch_signTransaction",
             params: JSON.parse(stringify(wcObj)),
@@ -1062,6 +1078,16 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         </div>
 
         <div className="flex items-center gap-2">
+          {!wallet?.address && (
+            <select
+              value={wcNetwork}
+              onChange={(e) => setWcNetwork(e.target.value as "mainnet" | "chipnet")}
+              className="bg-[#1e1e1e] text-[#cccccc] border border-[#3e3e42] rounded px-2 py-1 text-xs focus:outline-none focus:border-[#5ae6b9]/50"
+            >
+              <option value="mainnet">MainNet</option>
+              <option value="chipnet">ChipNet</option>
+            </select>
+          )}
           {wallet && wallet.address ? (
             <div className="flex items-center gap-1">
               <button
