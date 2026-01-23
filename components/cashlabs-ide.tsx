@@ -59,6 +59,7 @@ interface Wallet {
   transactions: any[]
   bchPrice: number
   type?: 'local' | 'walletconnect'
+  network: 'mainnet' | 'chipnet'
 }
 
 export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTemplateName, projectId, initialIsPublic = false }: { initialFiles: any, selectedTemplate: string, selectedTemplateName: string, projectId?: string, initialIsPublic?: boolean }) {
@@ -220,7 +221,8 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         mnemonic: account.mnemonic || "",
         transactions: [],
         bchPrice: 0,
-        type: 'local' as const
+        type: 'local' as const,
+        network: wcNetwork
       }
 
 
@@ -315,7 +317,8 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         mnemonic: "",
         transactions: [],
         bchPrice: 0,
-        type: 'walletconnect'
+        type: 'walletconnect',
+        network: wcNetwork
       };
       setWallet(newWallet);
       // Store approved chain in memory/storage if needed, or just extract from session later

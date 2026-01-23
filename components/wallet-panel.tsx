@@ -34,6 +34,7 @@ interface WalletPanelProps {
     transactions?: Transaction[]
     algoPrice?: number
     type?: 'local' | 'walletconnect'
+    network: 'mainnet' | 'chipnet'
   }
   onClose: () => void
 }
@@ -49,7 +50,8 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [network, setNetwork] = useState<'testnet' | 'mainnet'>('testnet')
+
+  const network = wallet?.network || 'chipnet'
 
   const handleFaucet = async () => {
     if (!wallet?.address) return
@@ -94,7 +96,7 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
 
   // Algorand Network URLs
   const NETWORK_CONFIG = {
-    testnet: {
+    chipnet: {
       indexer: "https://rest.mainnet.cash",
       algod: "https://rest.mainnet.cash",
       explorer: "https://blockchair.com/bitcoin-cash"
@@ -106,7 +108,7 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
     }
   }
 
-  const currentNetwork = NETWORK_CONFIG[network]
+  const currentNetwork = NETWORK_CONFIG[network as keyof typeof NETWORK_CONFIG]
 
   const handleSendOpReturn = async () => {
     if (!wallet?.address || !opReturnMessage) return
@@ -317,14 +319,9 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
       <div className="h-8 bg-[#2d2d30] flex items-center justify-between px-3 text-xs font-medium border-b border-[#3e3e42]">
         <div className="flex items-center gap-2">
           <span>WALLET</span>
-          <select
-            value={network}
-            onChange={(e) => setNetwork(e.target.value as 'testnet' | 'mainnet')}
-            className="bg-[#1e1e1e] text-[#cccccc] border border-[#3e3e42] rounded px-1 text-xs"
-          >
-            <option value="testnet">TestNet</option>
-            <option value="mainnet">MainNet</option>
-          </select>
+          <div className="bg-[#1e1e1e] text-[#5ae6b9] border border-[#3e3e42] rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+            {network === 'chipnet' ? 'ChipNet' : 'MainNet'}
+          </div>
         </div>
         <Button variant="ghost" size="icon" className="w-4 h-4" onClick={onClose}>
           <X className="w-3 h-3" />
@@ -422,7 +419,7 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
                   <Send className="w-4 h-4 mr-2" />
                   Send
                 </Button>
-                {network === 'testnet' && (
+                {network === 'chipnet' && (
                   <Button
                     className="flex-1 bg-blue-600 hover:bg-blue-700 h-9"
                     onClick={handleFaucet}
