@@ -33,6 +33,7 @@ interface WalletPanelProps {
     mnemonic: string
     transactions?: Transaction[]
     algoPrice?: number
+    type?: 'local' | 'walletconnect'
   }
   onClose: () => void
 }
@@ -109,6 +110,10 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
 
   const handleSendOpReturn = async () => {
     if (!wallet?.address || !opReturnMessage) return
+    if (wallet.type === 'walletconnect') {
+      toast({ title: "WalletConnect", description: "Direct OP_RETURN not yet supported for WalletConnect in this panel.", variant: "destructive" })
+      return
+    }
     setIsLoading(true)
     setError(null)
     try {
@@ -258,6 +263,10 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
 
   const handleSend = async () => {
     if (!wallet?.address || !sendAmount || !sendAddress) return
+    if (wallet.type === 'walletconnect') {
+      toast({ title: "WalletConnect", description: "Direct sending not yet supported for WalletConnect in this panel.", variant: "destructive" })
+      return
+    }
 
     setIsLoading(true)
     setError(null)
@@ -426,14 +435,16 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
               </div>
             )}
 
-            <Button
-              variant="outline"
-              className="w-full border-[#3e3e42] text-[#cccccc] hover:bg-[#37373d] h-9"
-              onClick={handleBackupAccount}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Backup Account
-            </Button>
+            {wallet.type !== 'walletconnect' && (
+              <Button
+                variant="outline"
+                className="w-full border-[#3e3e42] text-[#cccccc] hover:bg-[#37373d] h-9"
+                onClick={handleBackupAccount}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Backup Account
+              </Button>
+            )}
           </div>
 
           {/* QR Code */}

@@ -17,7 +17,9 @@ import { ArtifactsPanel } from "@/components/artifacts-panel"
 import { ProgramsPanel } from "@/components/programs-panel"
 import { SettingsPanel } from "@/components/settings-panel"
 import { ArtifactFileViewerPanel } from "@/components/artifact-file-viewer-panel"
-import { Pencil } from "lucide-react"
+import { Pencil, Smartphone, Wallet as WalletIcon, ExternalLink, QrCode } from "lucide-react"
+import SignClient from "@walletconnect/sign-client"
+import QRCode from "react-qr-code"
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -56,6 +58,7 @@ interface Wallet {
   mnemonic: string
   transactions: any[]
   bchPrice: number
+  type?: 'local' | 'walletconnect'
 }
 
 export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTemplateName, projectId, initialIsPublic = false }: { initialFiles: any, selectedTemplate: string, selectedTemplateName: string, projectId?: string, initialIsPublic?: boolean }) {
@@ -96,6 +99,13 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
   const [selectedContract, setSelectedContract] = useState<any>(null);
   const [selectedMethod, setSelectedMethod] = useState<any>(null);
   const [executeArgs, setExecuteArgs] = useState<any[]>([]);
+
+  // WalletConnect states
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+  const [wcUri, setWcUri] = useState<string>("");
+  const [isWCQrModalOpen, setIsWCQrModalOpen] = useState(false);
+  const [wcClient, setWcClient] = useState<any>(null);
+  const [wcSession, setWcSession] = useState<any>(null);
 
   // Layout state
   const [showAIChat, setShowAIChat] = useState(false)
@@ -209,6 +219,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         mnemonic: account.mnemonic || "",
         transactions: [],
         bchPrice: 0,
+        type: 'local' as const
       }
 
 
@@ -221,8 +232,87 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       console.log(`https://chipnet.imaginary.cash/`)
     } catch (error) {
       console.error("Error creating wallet:", error)
+    } finally {
+      setIsConnectModalOpen(false);
     }
   }
+
+  const initWalletConnect = async () => {
+    if (wcClient) return wcClient;
+    const projectId = process.env.NEXT_PUBLIC_WC_PROJECT_ID || "3a8170812b34075148a9ca69463cb30c";
+
+    try {
+      handleTerminalOutput(`🔌 Initializing WalletConnect (Project ID: ${projectId.substring(0, 5)}...)`);
+      const client = await SignClient.init({
+        projectId: projectId,
+        metadata: {
+          name: "CashLabs IDE",
+          description: "Bitcoin Cash Smart Contract IDE",
+          url: typeof window !== 'undefined' ? window.location.origin : "https://cashlabs.io",
+          icons: ["https://cashlabs.io/icon.png"],
+        },
+      });
+      setWcClient(client);
+      return client;
+    } catch (e: any) {
+      console.error("WC Init error:", e);
+      handleTerminalOutput(`❌ WalletConnect Initialization Failed: ${e.message}`);
+      toast({
+        title: "WalletConnect Error",
+        description: e.message?.includes("Project not found")
+          ? "Invalid WalletConnect Project ID. Please check your .env file."
+          : "Failed to initialize WalletConnect",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+
+  const connectWalletConnect = async () => {
+    handleTerminalOutput("Initializing WalletConnect...");
+    const client = await initWalletConnect();
+    if (!client) return;
+
+    try {
+      const { uri, approval } = await client.connect({
+        requiredNamespaces: {
+          bch: {
+            methods: ["bch_signTransaction", "bch_signMessage"],
+            chains: ["bch:chipnet"],
+            events: ["accountsChanged", "chainChanged"],
+          },
+        },
+      });
+
+      if (uri) {
+        setWcUri(uri);
+        setIsWCQrModalOpen(true);
+      }
+
+      const session = await approval();
+      setWcSession(session);
+      setIsWCQrModalOpen(false);
+      setIsConnectModalOpen(false);
+
+      const address = session.namespaces.bch.accounts[0].split(":")[2];
+      const newWallet: Wallet = {
+        address,
+        balance: 0,
+        privateKey: "",
+        mnemonic: "",
+        transactions: [],
+        bchPrice: 0,
+        type: 'walletconnect'
+      };
+      setWallet(newWallet);
+      localStorage.setItem("bch-wallet", JSON.stringify(newWallet));
+      handleTerminalOutput(`✅ Connected via WalletConnect: ${address}`);
+    } catch (e: any) {
+      console.error("WC Connection error:", e);
+      setIsWCQrModalOpen(false);
+      handleTerminalOutput(`❌ WalletConnect Error: ${e.message || "User rejected or timeout"}`);
+    }
+  };
 
   const openFile = (filePath: string) => {
     if (!openFiles.includes(filePath)) {
@@ -745,7 +835,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       }
 
       // 3. PROCESS ARGUMENTS
-      const processedArgs = executeArgs.map((val, i) => {
+      const processedArgs = await Promise.all(executeArgs.map(async (val, i) => {
         const argInfo = (selectedMethod.args || [])[i];
         if (!argInfo) return val;
 
@@ -753,9 +843,17 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         handleTerminalOutput(`   Mapping arg [${argInfo.name}] (${type}): ${val}`);
 
         if (type === 'sig') {
+          if (wallet.type === 'walletconnect') {
+            const { placeholderSignature } = await import('cashscript');
+            return placeholderSignature();
+          }
           return new SignatureTemplate(wallet.privateKey);
         }
         if (type === 'pubkey') {
+          if (wallet.type === 'walletconnect') {
+            const { placeholderPublicKey } = await import('cashscript');
+            return placeholderPublicKey();
+          }
           return new SignatureTemplate(wallet.privateKey).getPublicKey();
         }
         if (type === 'int') {
@@ -770,27 +868,69 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         }
         // Bytes handling (e.g. 0x...)
         if (type.startsWith('bytes') && typeof val === 'string' && val.startsWith('0x')) {
-          // cashscript handles 0x strings automatically in many cases, but let's be safe
           return val;
         }
 
         return val;
-      });
+      }));
 
       // 4. BUILD & SEND TRANSACTION
-      handleTerminalOutput(`📡 Broadcasting to Chipnet...`);
-
       const func = (contract.unlock as any)[selectedMethod.name];
       if (typeof func !== 'function') {
         throw new Error(`Method ${selectedMethod.name} not found on contract instance.`);
       }
 
-      const tx = func(...processedArgs);
+      const tx = func(...processedArgs).to(wallet.address, BigInt(1000));
 
-      // We send 1000 satoshis (dust/small amount) to the user's wallet to ensure 
-      // the transaction has at least one output and valid fee calculation.
-      // This is common for non-covenant/simple contract calls.
-      const txDetails = await tx.to(wallet.address, BigInt(1000)).send();
+      let txDetails: any;
+
+      if (wallet.type === 'walletconnect') {
+        handleTerminalOutput(`📱 Requesting signature via WalletConnect...`);
+
+        // Generate WalletConnect transaction object with broadcast: true and custom prompt
+        const wcObj = tx.generateWcTransactionObject({
+          broadcast: true,
+          userPrompt: `Execute ${selectedMethod.name} on ${selectedContract.contractName || 'Contract'}`,
+        });
+
+        // Use @bitauth/libauth stringify to handle BigInt and Uint8Array correctly
+        const { stringify } = await import('@bitauth/libauth');
+        const client = await initWalletConnect();
+        const session = wcSession || client.session.getAll()[0];
+
+        if (!session) throw new Error("No WalletConnect session found. Please reconnect.");
+
+        const result: any = await client.request({
+          topic: session.topic,
+          chainId: "bch:chipnet",
+          request: {
+            method: "bch_signTransaction",
+            params: JSON.parse(stringify(wcObj)),
+          },
+        });
+
+        // Handle SignedTxObject: { signedTransaction: string, signedTransactionHash: string }
+        if (result && (result.signedTransactionHash || result.signedTransaction)) {
+          const txid = result.signedTransactionHash; // Usually the TXID
+
+          if (!txid && result.signedTransaction) {
+            handleTerminalOutput(`✅ Transaction signed. Finalizing broadcast...`);
+            const broadcastTxid = await provider.sendRawTransaction(result.signedTransaction);
+            txDetails = { txid: broadcastTxid };
+          } else {
+            handleTerminalOutput(`✅ Transaction confirmed by wallet.`);
+            txDetails = { txid };
+          }
+        } else {
+          // Fallback if result is just the hex string (older wallets)
+          handleTerminalOutput(`✅ Transaction signed. Finalizing broadcast...`);
+          const txid = await provider.sendRawTransaction(result as string);
+          txDetails = { txid };
+        }
+      } else {
+        handleTerminalOutput(`📡 Broadcasting to Chipnet...`);
+        txDetails = await tx.send();
+      }
 
       handleTerminalOutput(`✅ Transaction confirmed!`);
       handleTerminalOutput(`   TXID: ${txDetails.txid}`);
@@ -923,20 +1063,34 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
         <div className="flex items-center gap-2">
           {wallet && wallet.address ? (
-            <button
-              onClick={() => setShowWallet(!showWallet)}
-              className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
-              style={{ backgroundColor: "var(--button-color)", color: "black" }}
-            >
-              Wallet: {`${String(wallet.address.substring(0, 10))}...` || "Invalid Address"}
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setShowWallet(!showWallet)}
+                className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-2"
+                style={{ backgroundColor: "var(--button-color)", color: "black" }}
+              >
+                {wallet.type === 'walletconnect' ? <Smartphone className="w-3 h-3" /> : <WalletIcon className="w-3 h-3" />}
+                {`${String(wallet.address.substring(0, 10))}...`}
+              </button>
+              <button
+                onClick={() => {
+                  setWallet(null);
+                  localStorage.removeItem("bch-wallet");
+                  setIsConnectModalOpen(true);
+                }}
+                className="p-1.5 rounded hover:bg-white/10 text-white/40 transition-colors"
+                title="Disconnect"
+              >
+                <ExternalLink className="w-3 h-3 rotate-180" />
+              </button>
+            </div>
           ) : (
             <button
-              onClick={createWallet}
+              onClick={() => setIsConnectModalOpen(true)}
               className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm"
               style={{ backgroundColor: "var(--button-color)", color: "black" }}
             >
-              Create Wallet
+              Connect Wallet
             </button>
           )}
         </div>
@@ -1292,6 +1446,73 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                 </Button>
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Wallet Connection Modal */}
+      <Dialog open={isConnectModalOpen} onOpenChange={setIsConnectModalOpen}>
+        <DialogContent className="sm:max-w-md bg-[#1e1e1e] border-white/10 text-white">
+          <DialogHeader>
+            <DialogTitle>Connect Wallet</DialogTitle>
+            <DialogDescription className="text-white/60">
+              Choose how you want to connect to the Bitcoin Cash network.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button
+              variant="outline"
+              className="h-24 flex flex-col items-center justify-center gap-2 border-white/10 bg-[#2a2a2a] hover:border-[#5ae6b9] hover:bg-[#5ae6b9]/5 transition-all group"
+              onClick={createWallet}
+            >
+              <div className="flex items-center gap-2 group-hover:text-[#5ae6b9]">
+                <WalletIcon className="w-5 h-5" />
+                <span className="font-bold">Create / Import Local Wallet</span>
+              </div>
+              <span className="text-[10px] text-white/40">Generates a new testnet wallet in your browser</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="h-24 flex flex-col items-center justify-center gap-2 border-white/10 bg-[#2a2a2a] hover:border-[#5ae6b9] hover:bg-[#5ae6b9]/5 transition-all group"
+              onClick={connectWalletConnect}
+            >
+              <div className="flex items-center gap-2 group-hover:text-[#5ae6b9]">
+                <Smartphone className="w-5 h-5" />
+                <span className="font-bold">Connect via WalletConnect</span>
+              </div>
+              <span className="text-[10px] text-white/40">Scan QR code with Paytaca, Bitcoin.com, or other wallets</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* WalletConnect QR Modal */}
+      <Dialog open={isWCQrModalOpen} onOpenChange={setIsWCQrModalOpen}>
+        <DialogContent className="sm:max-w-sm flex flex-col items-center justify-center bg-white text-black border-none">
+          <DialogHeader className="w-full">
+            <DialogTitle className="flex items-center gap-2 text-black">
+              <QrCode className="w-5 h-5 text-[#5ae6b9]" />
+              Scan with Wallet
+            </DialogTitle>
+            <DialogDescription className="text-black/60">
+              Scan this QR code with a WalletConnect-compatible BCH wallet (e.g. Paytaca).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="bg-white p-4 rounded-xl mt-4 shadow-xl border-4 border-black/5">
+            {wcUri && <QRCode value={wcUri} size={250} />}
+          </div>
+          <div className="mt-6 flex flex-col items-center gap-2 w-full">
+            <p className="text-[10px] text-black/40 uppercase tracking-widest font-bold">Or copy URI</p>
+            <div className="flex items-center gap-2 bg-black/5 p-2 rounded-lg w-full">
+              <code className="text-[10px] truncate flex-1 text-black font-mono">{wcUri}</code>
+              <Button size="icon" variant="ghost" className="h-6 w-6 hover:bg-black/10" onClick={() => {
+                navigator.clipboard.writeText(wcUri);
+                toast({ title: "Copied!", description: "WalletConnect URI copied to clipboard" });
+              }}>
+                <ExternalLink className="w-3 h-3" />
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
