@@ -86,10 +86,6 @@ export function CodeEditor({
   };
 
   const beforeMount = (monaco: any) => {
-    // Register CashScript language
-    monaco.languages.register({ id: 'cashscript' });
-    monaco.languages.setMonarchTokensProvider('cashscript', cashscriptLanguageDefinition);
-
     // Setup types before editor mounts
     if (!typesSetup) {
       setupMonacoTypes(monaco, template);

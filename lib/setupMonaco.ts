@@ -1,101 +1,16 @@
 import * as monaco from "monaco-editor";
+import { cashscriptLanguageDefinition } from "./cashscript-grammar";
+import { registerCashScriptIntelliSense } from "./cashscript-intellisense";
 
 function setupCashScript(monaco: any) {
   // Register a new language
   monaco.languages.register({ id: 'cashscript' });
 
-  // Define the tokens for the language
-  monaco.languages.setMonarchTokensProvider('cashscript', {
-    defaultToken: '',
-    tokenPostfix: '.cash',
+  // Define the tokens for the language using our new grammar
+  monaco.languages.setMonarchTokensProvider('cashscript', cashscriptLanguageDefinition);
 
-    keywords: [
-      'contract', 'function', 'constructor', 'parameter', 'require',
-      'if', 'else', 'new', 'this', 'return', 'pragma', 'cashscript'
-    ],
-
-    typeKeywords: [
-      'int', 'bool', 'string', 'pubkey', 'sig', 'datasig', 'byte',
-      'bytes', 'bytes1', 'bytes2', 'bytes3', 'bytes4', 'bytes8', 'bytes16', 'bytes20', 'bytes32'
-    ],
-
-    operators: [
-      '=', '>', '<', '!', '~', '?', ':',
-      '==', '<=', '>=', '!=', '&&', '||', '++', '--',
-      '+', '-', '*', '/', '&', '|', '^', '%', '<<', '>>', '>>>',
-      '+=', '-=', '*=', '/=', '&=', '|=', '^=', '%=', '<<=', '>>=', '>>>='
-    ],
-
-    // symbols
-    symbols: /[=><!~?:&|+\-*\/\^%]+/,
-    escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
-
-    tokenizer: {
-      root: [
-        // Identifiers and keywords
-        [/[a-zA-Z_$][\w$]*/, {
-          cases: {
-            '@typeKeywords': 'keyword.type',
-            '@keywords': 'keyword',
-            '@default': 'identifier'
-          }
-        }],
-
-        // Whitespace
-        { include: '@whitespace' },
-
-        // Delimiters
-        [/[{}()\[\]]/, '@brackets'],
-        [/[<>](?!@symbols)/, '@brackets'],
-        [/@symbols/, {
-          cases: {
-            '@operators': 'operator',
-            '@default': ''
-          }
-        }],
-
-        // Numbers
-        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
-        [/0[xX][0-9a-fA-F]+/, 'number.hex'],
-        [/\d+/, 'number'],
-
-        // Strings
-        [/"([^"\\]|\\.)*$/, 'string.invalid'],  // non-terminated string
-        [/"/, 'string', '@string'],
-
-        // Characters
-        [/'([^'\\]|\\.)*$/, 'string.invalid'],  // non-terminated string
-        [/'/, 'string', '@character'],
-      ],
-
-      whitespace: [
-        [/[ \t\r\n]+/, 'white'],
-        [/\/\*/, 'comment', '@comment'],
-        [/\/\/.*$/, 'comment'],
-      ],
-
-      comment: [
-        [/[^\/*]+/, 'comment'],
-        [/\/\*/, 'comment', '@push'],    // nested comment
-        ["\\*/", 'comment', '@pop'],
-        [/[\/*]/, 'comment']
-      ],
-
-      string: [
-        [/[^\\"]+/, 'string'],
-        [/@escapes/, 'string.escape'],
-        [/\\./, 'string.escape.invalid'],
-        [/"/, 'string', '@pop']
-      ],
-
-      character: [
-        [/[^\\']+/, 'string'],
-        [/@escapes/, 'string.escape'],
-        [/\\./, 'string.escape.invalid'],
-        [/'/, 'string', '@pop']
-      ],
-    },
-  });
+  // Register IntelliSense features (Completions, Hover, Signature Help)
+  registerCashScriptIntelliSense(monaco);
 
   // Configuration for the language
   monaco.languages.setLanguageConfiguration('cashscript', {

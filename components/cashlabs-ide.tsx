@@ -161,6 +161,38 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
     }
   }, [initialFiles, selectedTemplate]);
 
+  // Handle WalletConnect session restoration
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (wallet?.type === 'walletconnect' && !wcSession) {
+        console.log("Restoring WalletConnect session...");
+        const client = await initWalletConnect();
+        if (client) {
+          const sessions = client.session.getAll();
+          if (sessions.length > 0) {
+            // Find session that matches current wallet address
+            const session = sessions.find((s: any) =>
+              Object.values(s.namespaces).some((ns: any) =>
+                ns.accounts.some((acc: any) => acc.split(":")[2] === wallet.address)
+              )
+            ) || sessions[0];
+
+            setWcSession(session);
+            handleTerminalOutput("🔄 WalletConnect session restored");
+          } else {
+            handleTerminalOutput("⚠️ WalletConnect session expired. Please reconnect.");
+            setWallet(null);
+            localStorage.removeItem("bch-wallet");
+          }
+        }
+      }
+    };
+
+    if (wallet?.type === 'walletconnect') {
+      restoreSession();
+    }
+  }, [wallet?.address]);
+
   const loadContract = async (encoded: string) => {
     try {
       handleTerminalOutput("Loading contract...");
@@ -321,7 +353,9 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         network: wcNetwork
       };
       setWallet(newWallet);
-      // Store approved chain in memory/storage if needed, or just extract from session later
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem("bch-wallet", JSON.stringify(newWallet));
+      }
       handleTerminalOutput(`✅ Connected via WalletConnect: ${address} (${approvedChain})`);
     } catch (e: any) {
       console.error("WC Connection error:", e);
