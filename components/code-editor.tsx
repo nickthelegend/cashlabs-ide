@@ -6,6 +6,7 @@ import { X, Circle } from "lucide-react"
 import type { WebContainer } from "@webcontainer/api"
 import { draculaTheme } from "@/lib/dracula-theme";
 import { setupMonacoTypes } from "@/lib/setupMonaco";
+import { cashscriptLanguageDefinition } from "@/lib/cashscript-grammar";
 
 type Template = 'pyteal' | 'tealscript' | 'puyapy' | 'puyats';
 
@@ -85,6 +86,10 @@ export function CodeEditor({
   };
 
   const beforeMount = (monaco: any) => {
+    // Register CashScript language
+    monaco.languages.register({ id: 'cashscript' });
+    monaco.languages.setMonarchTokensProvider('cashscript', cashscriptLanguageDefinition);
+
     // Setup types before editor mounts
     if (!typesSetup) {
       setupMonacoTypes(monaco, template);
