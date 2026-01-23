@@ -211,8 +211,15 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
     return null
   }
 
+  const getFormattedAddress = () => {
+    if (!wallet?.address) return "";
+    const cleanAddr = wallet.address.includes(':') ? wallet.address.split(':')[1] : wallet.address;
+    const prefix = network === 'mainnet' ? 'bitcoincash' : 'bchtest';
+    return `${prefix}:${cleanAddr}`;
+  }
+
   const copyAddress = () => {
-    navigator.clipboard.writeText(wallet.address)
+    navigator.clipboard.writeText(getFormattedAddress())
   }
 
   const getTransactionType = (tx: Transaction) => {
@@ -332,8 +339,8 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium">Bitcoin Cash Wallet</div>
               <div className="text-xs text-[#969696] flex items-center gap-1">
-                <span className="truncate" title={wallet.address}>
-                  {wallet.address || "Invalid Address"}
+                <span className="truncate" title={getFormattedAddress()}>
+                  {getFormattedAddress()}
                 </span>
                 <Button variant="ghost" size="icon" className="w-3 h-3 flex-shrink-0" onClick={copyAddress}>
                   <Copy className="w-2 h-2" />
@@ -451,7 +458,7 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
           <div className="flex flex-col items-center justify-center p-4 bg-white/5 rounded-lg border border-[#3e3e42] mb-6">
             <div className="w-32 h-32 mb-2 rounded bg-white p-2 flex items-center justify-center">
               <QRCode
-                value={wallet.address}
+                value={getFormattedAddress()}
                 size={112}
                 level="M"
                 bgColor="#ffffff"
@@ -459,7 +466,7 @@ export function WalletPanel({ wallet, onClose }: WalletPanelProps) {
               />
             </div>
             <div className="text-[10px] text-[#969696] font-mono break-all text-center px-2">
-              {wallet.address}
+              {getFormattedAddress()}
             </div>
           </div>
 

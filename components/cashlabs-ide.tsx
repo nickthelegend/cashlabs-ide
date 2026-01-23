@@ -250,7 +250,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
           name: "CashLabs IDE",
           description: "Bitcoin Cash Smart Contract IDE",
           url: typeof window !== 'undefined' ? window.location.origin : "https://cashlabs.io",
-          icons: ["https://cashlabs.dev/icon.png"],
+          icons: ["https://cashlabs.dev/logo.png"],
         },
       });
       setWcClient(client);
@@ -1090,14 +1090,21 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
           )}
           {wallet && wallet.address ? (
             <div className="flex items-center gap-1">
-              <button
-                onClick={() => setShowWallet(!showWallet)}
-                className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-2"
-                style={{ backgroundColor: "var(--button-color)", color: "black" }}
-              >
-                {wallet.type === 'walletconnect' ? <Smartphone className="w-3 h-3" /> : <WalletIcon className="w-3 h-3" />}
-                {`${String(wallet.address.substring(0, 10))}...`}
-              </button>
+              {(() => {
+                const cleanAddr = wallet.address.includes(':') ? wallet.address.split(':')[1] : wallet.address;
+                const prefix = wcNetwork === 'mainnet' ? 'bitcoincash' : 'bchtest';
+                const fullAddr = `${prefix}:${cleanAddr}`;
+                return (
+                  <button
+                    onClick={() => setShowWallet(!showWallet)}
+                    className="px-3 py-1.5 rounded text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm flex items-center gap-2"
+                    style={{ backgroundColor: "var(--button-color)", color: "black" }}
+                  >
+                    {wallet.type === 'walletconnect' ? <Smartphone className="w-3 h-3" /> : <WalletIcon className="w-3 h-3" />}
+                    {`${fullAddr.substring(0, 18)}...`}
+                  </button>
+                );
+              })()}
               <button
                 onClick={() => {
                   setWallet(null);
