@@ -746,7 +746,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
       // 3. PROCESS ARGUMENTS
       const processedArgs = executeArgs.map((val, i) => {
-        const argInfo = selectedMethod.args[i];
+        const argInfo = (selectedMethod.args || [])[i];
         if (!argInfo) return val;
 
         const type = argInfo.type;
@@ -1194,19 +1194,19 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-medium">{method.name}</span>
                     <Badge className="text-xs border border-input bg-background">
-                      {method.args.length} args
+                      {(method.args || []).length} args
                     </Badge>
                   </div>
                   <Button onClick={() => {
                     setSelectedMethod(method);
-                    setExecuteArgs(method.args.map(() => ''));
+                    setExecuteArgs((method.args || []).map(() => ''));
                     setIsExecuteModalOpen(true);
                     setIsMethodsModalOpen(false);
                   }}>
                     Execute
                   </Button>
                 </div>
-                {method.args.length > 0 && (
+                {(method.args || []).length > 0 && (
                   <div className="text-sm text-muted-foreground">
                     <span className="font-medium">Arguments:</span>
                     <div className="mt-1 space-y-1">

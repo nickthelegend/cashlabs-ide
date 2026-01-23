@@ -157,9 +157,9 @@ export default function ContractPage() {
                             </div>
                             <div className="space-y-1.5">
                                 <p className="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em] opacity-60">Network Environment</p>
-                                <p className="text-sm font-semibold flex items-center gap-2.5 text-gray-200">
+                                <div className="text-sm font-semibold flex items-center gap-2.5 text-gray-200">
                                     <div className="w-2.5 h-2.5 rounded-full bg-[#58ba53] shadow-[0_0_8px_rgba(88,186,83,0.5)] animate-pulse" /> Chipnet (BCH Testnet)
-                                </p>
+                                </div>
                             </div>
                             <div className="md:col-span-2 space-y-1.5 pt-2">
                                 <p className="text-[10px] text-gray-500 uppercase font-black tracking-[0.2em] opacity-60">Developer Description</p>
@@ -256,8 +256,8 @@ export default function ContractPage() {
                                                     key={method.name}
                                                     variant={selectedMethod?.name === method.name ? "default" : "outline"}
                                                     className={`cursor-pointer px-4 py-2 transition-all rounded-xl active:scale-90 font-bold text-xs ${selectedMethod?.name === method.name
-                                                            ? 'bg-[#58ba53] hover:bg-[#469e42] text-white shadow-xl shadow-[#58ba53]/30 border-transparent scale-105'
-                                                            : 'border-[#333] hover:bg-[#333] text-gray-500 hover:text-white'
+                                                        ? 'bg-[#58ba53] hover:bg-[#469e42] text-white shadow-xl shadow-[#58ba53]/30 border-transparent scale-105'
+                                                        : 'border-[#333] hover:bg-[#333] text-gray-500 hover:text-white'
                                                         }`}
                                                     onClick={() => {
                                                         setSelectedMethod(method)

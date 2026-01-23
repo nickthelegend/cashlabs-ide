@@ -243,6 +243,7 @@ export function TransactionBuilder({
   }
 
   const getMethodType = (method: any) => {
+    if (!method || !method.name) return "call"
     if (method.name === "createApplication") return "create"
     if (method.name === "updateApplication") return "update"
     if (method.name === "deleteApplication") return "delete"
@@ -252,7 +253,7 @@ export function TransactionBuilder({
   // Render all method arguments, supporting tuples
   const renderArgs = () => (
     <>
-      {method.args.map((arg: any, index: number) => (
+      {(method.args || []).map((arg: any, index: number) => (
         <ArgInput
           key={arg.name || index}
           arg={arg}
