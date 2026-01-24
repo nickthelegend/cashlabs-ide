@@ -21,6 +21,7 @@ import {
   Loader2,
   Pencil,
   Sparkles,
+  Activity,
 } from "lucide-react"
 import Link from "next/link"
 import FileTree from "@/components/file-tree"
@@ -45,11 +46,13 @@ interface SidebarProps {
   onContractSelect?: (contract: any) => void
   onBuild?: () => void
   isBuilding?: boolean
+  interactNode?: React.ReactNode
 }
 
 const sidebarSections = [
   { id: "explorer", icon: FolderOpen, label: "Explorer" },
   { id: "build", icon: Hammer, label: "Build & Deploy" },
+  { id: "interact", icon: Activity, label: "Interact" },
   { id: "ai-chat", icon: MessageSquare, label: "AI Chat" },
   { id: "build-panel", icon: Wrench, label: "Build Panel" },
   { id: "contribute", icon: Sparkles, label: "Contribute", isLink: true },
@@ -73,6 +76,7 @@ export function Sidebar({
   onContractSelect,
   onBuild,
   isBuilding,
+  interactNode,
 }: SidebarProps) {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(["src", "tests", "scripts"]))
   const [expandedArtifactsFolders, setExpandedArtifactsFolders] = useState<Set<string>>(new Set())
@@ -287,6 +291,12 @@ export function Sidebar({
               ) : (
                 <div className="px-3 py-1 text-xs text-[#969696]">No artifacts found.</div>
               )}
+            </div>
+          )}
+
+          {activeSection === "interact" && (
+            <div className="h-full">
+              {interactNode}
             </div>
           )}
 

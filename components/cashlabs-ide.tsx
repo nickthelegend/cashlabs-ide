@@ -17,6 +17,7 @@ import { ArtifactsPanel } from "@/components/artifacts-panel"
 import { ProgramsPanel } from "@/components/programs-panel"
 import { SettingsPanel } from "@/components/settings-panel"
 import { ArtifactFileViewerPanel } from "@/components/artifact-file-viewer-panel"
+import { InteractPanel } from "@/components/interact-panel"
 import { Pencil, Smartphone, Wallet as WalletIcon, ExternalLink, QrCode } from "lucide-react"
 import SignClient from "@walletconnect/sign-client"
 import QRCode from "react-qr-code"
@@ -109,6 +110,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
   const [wcClient, setWcClient] = useState<any>(null);
   const [wcSession, setWcSession] = useState<any>(null);
   const [wcNetwork, setWcNetwork] = useState<"mainnet" | "chipnet">("chipnet");
+  const [selectedInstance, setSelectedInstance] = useState<any>(null);
 
   // Layout state
   const [showAIChat, setShowAIChat] = useState(false)
@@ -671,8 +673,32 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         const provider = new ElectrumNetworkProvider('chipnet');
         handleTerminalOutput(`🌐 Network: chipnet (testnet)`);
 
-        // Create contract instance with provided args
-        const contract = new Contract(artifact, args, { provider });
+        // Create contract instance with provided args - handle type casting for constructor inputs
+        const castedArgs = await Promise.all(args.map(async (arg, index) => {
+          const inputType = artifact.constructorInputs[index]?.type;
+
+          if (inputType === 'int') {
+            if (arg === '' || arg === null || arg === undefined) return 0n;
+            try {
+              return typeof arg === 'string' ? BigInt(arg) : BigInt(arg || 0);
+            } catch (e) {
+              handleTerminalOutput(`⚠️  Invalid integer for ${artifact.constructorInputs[index].name}: ${arg}. Using 0.`);
+              return 0n;
+            }
+          }
+
+          if (inputType === 'bool') {
+            return arg === 'true' || arg === true || arg === '1' || arg === 1;
+          }
+
+          if (inputType.startsWith('bytes') && typeof arg === 'string' && arg.startsWith('0x')) {
+            return arg;
+          }
+
+          return arg;
+        }));
+
+        const contract = new Contract(artifact, castedArgs, { provider });
 
         const address = contract.address;
         const tokenAddress = contract.tokenAddress;
@@ -723,6 +749,48 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
           description: `${artifact.contractName} deployed to ${address.substring(0, 20)}...`,
           duration: 5000
         });
+
+        // NEW: Call Faucet
+        handleTerminalOutput(`📡 Requesting Testnet BCH from Faucet...`);
+        try {
+          const faucetRes = await fetch('/api/faucet', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cashaddr: address })
+          });
+          const faucetData = await faucetRes.json();
+          if (faucetData.success) {
+            handleTerminalOutput(`✅ Faucet successful! Funds arriving shortly...`);
+          } else {
+            handleTerminalOutput(`⚠️  Faucet skipped or error: ${faucetData.error || 'Check balance manually'}`);
+          }
+        } catch (e) {
+          handleTerminalOutput(`⚠️  Faucet connection error. Please fund manually.`);
+        }
+
+        // NEW: Save to DB
+        if (projectId) {
+          const { data: userData } = await supabase.auth.getSession();
+          const userId = userData.session?.user?.id;
+
+          if (userId) {
+            handleTerminalOutput(`💾 Archiving deployment to database...`);
+            const { error: dbError } = await supabase.from('deployed_instances').insert({
+              project_id: projectId,
+              owner_id: userId,
+              name: artifact.contractName,
+              address: address,
+              artifact_json: artifact,
+              constructor_args: args,
+              network: 'chipnet'
+            });
+            if (dbError) {
+              handleTerminalOutput(`❌ DB Error: ${dbError.message}`);
+            } else {
+              handleTerminalOutput(`✅ Deployment archived.`);
+            }
+          }
+        }
 
         handleTerminalOutput(`\n📝 To interact with this contract:`);
         handleTerminalOutput(`   1. Send BCH to: ${address}`);
@@ -942,8 +1010,15 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       const provider = new ElectrumNetworkProvider('chipnet');
 
       // Re-instantiate contract
-      // selectedContract.args contains construction arguments
-      const contract = new Contract(artifact, selectedContract.args || [], { provider });
+      // selectedContract.args contains construction arguments - cast to BigInt if artifacts says so
+      const castedConstructorArgs = (selectedContract.args || []).map((arg: any, i: number) => {
+        const type = artifact.constructorInputs?.[i]?.type;
+        if (type === 'int') return BigInt(arg);
+        if (type === 'bool') return arg === 'true' || arg === true || arg === '1' || arg === 1;
+        return arg;
+      });
+
+      const contract = new Contract(artifact, castedConstructorArgs, { provider });
 
       if (contract.address !== selectedContract.address) {
         handleTerminalOutput(`⚠️  Warning: Derived address (${contract.address}) does not match deployment address (${selectedContract.address}). Check constructor arguments.`);
@@ -1267,6 +1342,27 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
               }}
               onBuild={handleBuild}
               isBuilding={isBuilding}
+              interactNode={
+                <InteractPanel
+                  projectId={projectId}
+                  onSelect={(instance: any) => {
+                    setSelectedInstance(instance);
+                    setSelectedContract({
+                      ...instance.artifact_json,
+                      appId: instance.address,
+                      address: instance.address,
+                      args: instance.constructor_args || [],
+                      artifactData: instance.artifact_json,
+                      methods: instance.artifact_json.abi.map((f: any) => ({
+                        name: f.name,
+                        args: f.inputs || []
+                      }))
+                    });
+                    setIsMethodsModalOpen(true);
+                  }}
+                  selectedInstanceId={selectedInstance?.id}
+                />
+              }
             />
           </div>
         </ResizablePanel>
