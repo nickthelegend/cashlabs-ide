@@ -1067,12 +1067,11 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       }));
 
       // 4. BUILD & SEND TRANSACTION
-      const func = (contract.unlock as any)[selectedMethod.name];
-      if (typeof func !== 'function') {
+      if (!(contract as any).functions?.[selectedMethod.name]) {
         throw new Error(`Method ${selectedMethod.name} not found on contract instance.`);
       }
 
-      const tx = func(...processedArgs).to(wallet.address, BigInt(1000));
+      const tx = (contract as any).functions[selectedMethod.name](...processedArgs).to(wallet.address, BigInt(1000));
 
       let txDetails: any;
 
