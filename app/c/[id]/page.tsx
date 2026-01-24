@@ -280,6 +280,7 @@ export default function ContractPage() {
                                                 onExecute={handleExecute}
                                                 isExecuting={false}
                                                 wallet={null}
+                                                layout="vertical"
                                             />
                                         </div>
                                     ) : (

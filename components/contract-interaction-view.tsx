@@ -71,17 +71,17 @@ export function ContractInteractionView({
 
             <div className="flex-1 overflow-hidden">
                 {!selectedMethod ? (
-                    <div className="h-full p-8 max-w-4xl mx-auto overflow-y-auto">
+                    <div className="h-full p-8 overflow-y-auto">
                         <div className="flex items-center gap-2 mb-8">
                             <Play className="w-4 h-4 text-[#5ae6b9]" />
                             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-white/60">Available Methods</h3>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {methods.map((method: any) => (
                                 <div
                                     key={method.name}
-                                    className="bg-[#161618] border border-white/5 p-6 rounded-[2rem] hover:border-[#5ae6b9]/30 transition-all cursor-pointer group flex flex-col justify-between h-full"
+                                    className="bg-[#161618] border border-white/5 p-6 rounded-[2rem] hover:border-[#5ae6b9]/30 transition-all cursor-pointer group flex flex-col justify-between h-full min-h-[160px]"
                                     onClick={() => onMethodSelect(method)}
                                 >
                                     <div className="mb-4">
@@ -114,7 +114,7 @@ export function ContractInteractionView({
                     </div>
                 ) : (
                     <div className="h-full overflow-y-auto bg-[#0f0f10] p-8">
-                        <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <TransactionBuilder
                                 contract={contract}
                                 method={selectedMethod}
