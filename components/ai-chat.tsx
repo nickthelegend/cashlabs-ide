@@ -5,10 +5,11 @@ import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { Badge } from "@/components/ui/badge";
 import ReactMarkdown from 'react-markdown';
-import rehypeHighlight from 'rehype-highlight';
 import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import { Sparkles, Send, Loader2 } from "lucide-react";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 interface AIChatProps {
   title: string;
@@ -109,27 +110,49 @@ const AIChat: React.FC<AIChatProps> = ({ title, selectedTemplate = "CashScript",
               >
                 Copy
               </button>
-              {onFileUpdate && activeFile && (
+              {onFileUpdate && (
                 <button
                   onClick={() => {
-                    onFileUpdate(activeFile, codeValue);
-                    toast({
-                      title: "File Updated",
-                      description: `${activeFile} has been updated.`,
-                    });
+                    if (activeFile) {
+                      onFileUpdate(activeFile, codeValue);
+                      toast({
+                        title: "File Updated",
+                        description: `${activeFile} has been updated.`,
+                      });
+                    } else {
+                      toast({
+                        title: "No Active File",
+                        description: "Please open a file in the editor to apply this code.",
+                        variant: "destructive",
+                      });
+                    }
                   }}
-                  className="text-[10px] px-2 py-1 bg-[#238636] hover:bg-[#2ea043] rounded text-white transition-colors"
+                  className={`text-[10px] px-2 py-1 rounded transition-colors ${activeFile ? "bg-[#238636] hover:bg-[#2ea043] text-white" : "bg-muted text-muted-foreground opacity-50 cursor-not-allowed"}`}
                 >
                   Apply Code
                 </button>
               )}
             </div>
           </div>
-          <pre className="p-4 overflow-x-auto text-sm leading-relaxed">
-            <code className={className} {...props}>
-              {children}
-            </code>
-          </pre>
+          <div className="p-0 overflow-hidden text-sm">
+            <SyntaxHighlighter
+              language={match[1] === 'cashscript' ? 'javascript' : match[1]}
+              style={vscDarkPlus}
+              customStyle={{
+                margin: 0,
+                padding: '1rem',
+                backgroundColor: 'transparent',
+                fontSize: '0.85rem',
+              }}
+              codeTagProps={{
+                style: {
+                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                }
+              }}
+            >
+              {codeValue}
+            </SyntaxHighlighter>
+          </div>
         </div>
       ) : (
         <code className="bg-[#afb8c1]/10 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
@@ -226,7 +249,7 @@ const AIChat: React.FC<AIChatProps> = ({ title, selectedTemplate = "CashScript",
                     <div className="prose prose-invert prose-sm max-w-none">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw, rehypeHighlight]}
+                        rehypePlugins={[rehypeRaw]}
                         components={markdownComponents}
                       >
                         {message.text}
