@@ -20,6 +20,7 @@ import { ArtifactFileViewerPanel } from "@/components/artifact-file-viewer-panel
 import { Pencil, Smartphone, Wallet as WalletIcon, ExternalLink, QrCode } from "lucide-react"
 import SignClient from "@walletconnect/sign-client"
 import QRCode from "react-qr-code"
+import { cn } from "@/lib/utils"
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -112,6 +113,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
   // Layout state
   const [showAIChat, setShowAIChat] = useState(false)
   const [showBuildPanel, setShowBuildPanel] = useState(false)
+  const [bottomTab, setBottomTab] = useState<"terminal" | "chat">("terminal")
   const [isBuilding, setIsBuilding] = useState(false)
   const [isReady, setIsReady] = useState(true)
 
@@ -892,7 +894,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
   const handleSidebarSectionChange = (section: string) => {
     if (section === 'ai-chat') {
-      setShowAIChat(true);
+      setBottomTab("chat");
       return;
     }
     if (section === 'build-panel') {
@@ -1337,12 +1339,27 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
             <ResizableHandle />
 
-            {/* Bottom Panel - Terminal */}
+            {/* Bottom Panel - Tabbed Terminal/Chat */}
             <ResizablePanel defaultSize={30} minSize={20}>
-              <ResizablePanelGroup direction="horizontal">
-                {/* Build Terminal */}
-                <ResizablePanel defaultSize={showAIChat ? 50 : 100}>
-                  <div className="h-full border-t" style={{ backgroundColor: "var(--background-color)", borderColor: "var(--border-color)" }}>
+              <div className="h-full flex flex-col border-t" style={{ backgroundColor: "var(--background-color)", borderColor: "var(--border-color)" }}>
+                {/* Custom Tab Bar */}
+                <div className="h-9 flex items-center px-1 border-b" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
+                  <button
+                    onClick={() => setBottomTab("terminal")}
+                    className={`h-full px-4 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 flex items-center gap-2 ${bottomTab === "terminal" ? "border-[#5ae6b9] text-[#5ae6b9]" : "border-transparent opacity-40 hover:opacity-100"}`}
+                  >
+                    Terminal
+                  </button>
+                  <button
+                    onClick={() => setBottomTab("chat")}
+                    className={`h-full px-4 text-[10px] font-bold uppercase tracking-widest transition-all border-b-2 flex items-center gap-2 ${bottomTab === "chat" ? "border-[#5ae6b9] text-[#5ae6b9]" : "border-transparent opacity-40 hover:opacity-100"}`}
+                  >
+                    AI Assistant
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-hidden">
+                  <div className={cn("h-full", bottomTab !== "terminal" && "hidden")}>
                     <WebContainerTerminal
                       title="BUILD TERMINAL"
                       webcontainer={null}
@@ -1350,29 +1367,19 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                       onAddOutput={handleTerminalOutput}
                     />
                   </div>
-                </ResizablePanel>
-
-                {/* AI Chat Panel */}
-                {showAIChat && (
-                  <>
-                    <ResizableHandle />
-                    <ResizablePanel defaultSize={50} minSize={30}>
-                      <div className="h-full border-t border-l" style={{ backgroundColor: "var(--background-color)", borderColor: "var(--border-color)" }}>
-                        <AIChat
-                          title="AI Chat"
-                          selectedTemplate={selectedTemplate}
-                          activeFile={activeFile}
-                          fileContent={activeFile ? fileContents[activeFile] : undefined}
-                          onFileUpdate={async (filePath: string, content: string) => {
-                            setFileContents((prev) => ({ ...prev, [filePath]: content }));
-                          }}
-                          onClose={() => setShowAIChat(false)}
-                        />
-                      </div>
-                    </ResizablePanel>
-                  </>
-                )}
-              </ResizablePanelGroup>
+                  <div className={cn("h-full", bottomTab !== "chat" && "hidden")}>
+                    <AIChat
+                      title="AI Chat"
+                      selectedTemplate={selectedTemplate}
+                      activeFile={activeFile}
+                      fileContent={activeFile ? fileContents[activeFile] : undefined}
+                      onFileUpdate={async (filePath: string, content: string) => {
+                        setFileContents((prev) => ({ ...prev, [filePath]: content }));
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
             </ResizablePanel>
           </ResizablePanelGroup>
         </ResizablePanel>
