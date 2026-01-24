@@ -20,7 +20,9 @@ import {
   Wrench,
   Loader2,
   Pencil,
+  Sparkles,
 } from "lucide-react"
+import Link from "next/link"
 import FileTree from "@/components/file-tree"
 import { cn } from "@/lib/utils"
 import { FileText } from "lucide-react";
@@ -48,11 +50,9 @@ interface SidebarProps {
 const sidebarSections = [
   { id: "explorer", icon: FolderOpen, label: "Explorer" },
   { id: "build", icon: Hammer, label: "Build & Deploy" },
-  { id: "programs", icon: Code, label: "Programs" },
-  { id: "tutorials", icon: BookOpen, label: "Tutorials" },
-  { id: "settings", icon: Settings, label: "Settings" },
   { id: "ai-chat", icon: MessageSquare, label: "AI Chat" },
   { id: "build-panel", icon: Wrench, label: "Build Panel" },
+  { id: "contribute", icon: Sparkles, label: "Contribute", isLink: true },
 ]
 
 
@@ -186,18 +186,31 @@ export function Sidebar({
       {/* Activity Bar */}
       <div className="w-12 bg-[#333334] flex flex-col items-center py-2 gap-1 border-r border-[#2d2d30] flex-shrink-0">
         {sidebarSections.map((section) => (
-          <button
-            key={section.id}
-            onClick={() => onSectionChange(section.id)}
-            className={cn(
-              "w-10 h-10 flex items-center justify-center rounded hover:bg-[#37373d] transition-colors relative",
-              activeSection === section.id && "bg-[#37373d]",
-            )}
-            title={section.label}
-          >
-            <section.icon className="w-5 h-5 text-[#cccccc]" />
-            {activeSection === section.id && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#0e639c]"></div>}
-          </button>
+          section.isLink ? (
+            <Link
+              key={section.id}
+              href={`/${section.id}`}
+              className={cn(
+                "w-10 h-10 flex items-center justify-center rounded hover:bg-[#37373d] transition-colors relative",
+              )}
+              title={section.label}
+            >
+              <section.icon className="w-5 h-5 text-[#cccccc]" />
+            </Link>
+          ) : (
+            <button
+              key={section.id}
+              onClick={() => onSectionChange(section.id)}
+              className={cn(
+                "w-10 h-10 flex items-center justify-center rounded hover:bg-[#37373d] transition-colors relative",
+                activeSection === section.id && "bg-[#37373d]",
+              )}
+              title={section.label}
+            >
+              <section.icon className="w-5 h-5 text-[#cccccc]" />
+              {activeSection === section.id && <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#0e639c]"></div>}
+            </button>
+          )
         ))}
       </div>
 
