@@ -151,6 +151,12 @@ contract Unlock(int value) {
               <span className="text-sm font-bold uppercase tracking-widest opacity-70 group-hover:opacity-100">Community</span>
               <Badge className="bg-[#5ae6b9]/10 text-[#5ae6b9] border-none font-black px-2 py-0">{publicCount}</Badge>
             </div>
+            <div
+              className="flex items-center gap-2 cursor-pointer hover:text-[#5ae6b9] transition-colors group"
+              onClick={() => router.push('/examples')}
+            >
+              <span className="text-sm font-bold uppercase tracking-widest opacity-70 group-hover:opacity-100">Examples</span>
+            </div>
             {user && (
               <div
                 className="flex items-center gap-2 cursor-pointer hover:text-[#5ae6b9] transition-colors group"
