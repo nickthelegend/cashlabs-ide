@@ -18,7 +18,8 @@ import { ProgramsPanel } from "@/components/programs-panel"
 import { SettingsPanel } from "@/components/settings-panel"
 import { ArtifactFileViewerPanel } from "@/components/artifact-file-viewer-panel"
 import { InteractPanel } from "@/components/interact-panel"
-import { Pencil, Smartphone, Wallet as WalletIcon, ExternalLink, QrCode } from "lucide-react"
+import { ContractInteractionView } from "@/components/contract-interaction-view"
+import { Pencil, Smartphone, Wallet as WalletIcon, ExternalLink, QrCode, ChevronUp, ChevronDown, Maximize2, Minimize2, Globe, Lock, Check } from "lucide-react"
 import SignClient from "@walletconnect/sign-client"
 import QRCode from "react-qr-code"
 import { cn } from "@/lib/utils"
@@ -45,7 +46,6 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { TransactionBuilder } from "@/components/transaction-builder"
-import { Globe, Lock, ChevronDown, Check } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -111,6 +111,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
   const [wcSession, setWcSession] = useState<any>(null);
   const [wcNetwork, setWcNetwork] = useState<"mainnet" | "chipnet">("chipnet");
   const [selectedInstance, setSelectedInstance] = useState<any>(null);
+  const bottomPanelRef = useRef<any>(null);
 
   // Layout state
   const [showAIChat, setShowAIChat] = useState(false)
@@ -118,6 +119,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
   const [bottomTab, setBottomTab] = useState<"terminal" | "chat">("terminal")
   const [isBuilding, setIsBuilding] = useState(false)
   const [isReady, setIsReady] = useState(true)
+  const [isBottomPanelCollapsed, setIsBottomPanelCollapsed] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [terminalOutput, setTerminalOutput] = useState<string[]>([]);
@@ -1161,7 +1163,6 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       });
     } finally {
       setIsDeploying(false);
-      setIsExecuteModalOpen(false);
     }
   };
 
@@ -1358,7 +1359,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                         args: f.inputs || []
                       }))
                     });
-                    setIsMethodsModalOpen(true);
+                    setSelectedMethod(null);
                   }}
                   selectedInstanceId={selectedInstance?.id}
                 />
@@ -1385,10 +1386,23 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                       onDeploy={deployArtifact}
                       onClose={() => setActiveArtifactFile(null)}
                     />
-                  ) : sidebarSection === "tutorials" ? (
-                    <TutorialPanel />
-                  ) : (sidebarSection === "artifacts" || sidebarSection === "build") ? (
+                  ) : sidebarSection === "artifacts" || sidebarSection === "build" ? (
                     <ArtifactsPanel webcontainer={null} onDeploy={deployArtifact} fileContents={fileContents} />
+                  ) : sidebarSection === "interact" ? (
+                    <ContractInteractionView
+                      contract={selectedContract}
+                      selectedMethod={selectedMethod}
+                      onMethodSelect={(method) => {
+                        setSelectedMethod(method);
+                        setExecuteArgs((method.args || []).map(() => ''));
+                      }}
+                      executeArgs={executeArgs}
+                      onArgsChange={setExecuteArgs}
+                      onExecute={executeMethod}
+                      isExecuting={isDeploying}
+                      wallet={wallet}
+                      onBack={() => setSelectedMethod(null)}
+                    />
                   ) : sidebarSection === "programs" ? (
                     <ProgramsPanel
                       deployedContracts={deployedContracts}
@@ -1436,7 +1450,16 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
             <ResizableHandle />
 
             {/* Bottom Panel - Tabbed Terminal/Chat */}
-            <ResizablePanel defaultSize={30} minSize={20}>
+            <ResizablePanel
+              ref={bottomPanelRef}
+              collapsible={true}
+              collapsedSize={4}
+              minSize={10}
+              maxSize={50}
+              defaultSize={30}
+              onCollapse={() => setIsBottomPanelCollapsed(true)}
+              onExpand={() => setIsBottomPanelCollapsed(false)}
+            >
               <div className="h-full flex flex-col border-t" style={{ backgroundColor: "var(--background-color)", borderColor: "var(--border-color)" }}>
                 {/* Custom Tab Bar */}
                 <div className="h-9 flex items-center px-1 border-b" style={{ backgroundColor: "var(--sidebar-color)", borderColor: "var(--border-color)" }}>
@@ -1452,29 +1475,49 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                   >
                     AI Assistant
                   </button>
+                  <div className="flex-1"></div>
+                  <button
+                    onClick={() => {
+                      if (isBottomPanelCollapsed) {
+                        bottomPanelRef.current?.expand();
+                      } else {
+                        bottomPanelRef.current?.collapse();
+                      }
+                    }}
+                    className="p-1.5 hover:bg-white/5 rounded transition-colors mr-1"
+                    title={isBottomPanelCollapsed ? "Expand Panel" : "Collapse Panel"}
+                  >
+                    {isBottomPanelCollapsed ? (
+                      <ChevronUp className="w-4 h-4 text-[#cccccc]" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-[#cccccc]" />
+                    )}
+                  </button>
                 </div>
 
-                <div className="flex-1 overflow-hidden">
-                  <div className={cn("h-full", bottomTab !== "terminal" && "hidden")}>
-                    <WebContainerTerminal
-                      title="BUILD TERMINAL"
-                      webcontainer={null}
-                      output={terminalOutput}
-                      onAddOutput={handleTerminalOutput}
-                    />
+                {!isBottomPanelCollapsed && (
+                  <div className="flex-1 overflow-hidden">
+                    <div className={cn("h-full", bottomTab !== "terminal" && "hidden")}>
+                      <WebContainerTerminal
+                        title="BUILD TERMINAL"
+                        webcontainer={null}
+                        output={terminalOutput}
+                        onAddOutput={handleTerminalOutput}
+                      />
+                    </div>
+                    <div className={cn("h-full", bottomTab !== "chat" && "hidden")}>
+                      <AIChat
+                        title="AI Chat"
+                        selectedTemplate={selectedTemplate}
+                        activeFile={activeFile}
+                        fileContent={activeFile ? fileContents[activeFile] : undefined}
+                        onFileUpdate={async (filePath: string, content: string) => {
+                          setFileContents((prev) => ({ ...prev, [filePath]: content }));
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className={cn("h-full", bottomTab !== "chat" && "hidden")}>
-                    <AIChat
-                      title="AI Chat"
-                      selectedTemplate={selectedTemplate}
-                      activeFile={activeFile}
-                      fileContent={activeFile ? fileContents[activeFile] : undefined}
-                      onFileUpdate={async (filePath: string, content: string) => {
-                        setFileContents((prev) => ({ ...prev, [filePath]: content }));
-                      }}
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             </ResizablePanel>
           </ResizablePanelGroup>
@@ -1496,7 +1539,7 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
                       ×
                     </button>
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-h-0 overflow-hidden">
                     <BuildPanel
                       isBuilding={isBuilding}
                       buildOutput={terminalOutput}
@@ -1569,73 +1612,6 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isMethodsModalOpen} onOpenChange={setIsMethodsModalOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Contract Methods</DialogTitle>
-            <DialogDescription>
-              Select a method to execute for contract: {selectedContract?.appId}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {(selectedContract?.methods || (selectedContract as any)?.functions?.map((f: string) => ({ name: f, args: [] })) || []).map((method: any) => (
-              <div key={method.name} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono font-medium">{method.name}</span>
-                    <Badge className="text-xs border border-input bg-background">
-                      {(method.args || []).length} args
-                    </Badge>
-                  </div>
-                  <Button onClick={() => {
-                    setSelectedMethod(method);
-                    setExecuteArgs((method.args || []).map(() => ''));
-                    setIsExecuteModalOpen(true);
-                    setIsMethodsModalOpen(false);
-                  }}>
-                    Execute
-                  </Button>
-                </div>
-                {(method.args || []).length > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    <span className="font-medium">Arguments:</span>
-                    <div className="mt-1 space-y-1">
-                      {method.args.map((arg: any, index: number) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <span className="font-mono text-xs">• {arg.name}:</span>
-                          <span className="text-xs">{arg.type}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isExecuteModalOpen} onOpenChange={setIsExecuteModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Transaction Builder</DialogTitle>
-            <DialogDescription>
-              Build and execute transactions for your smart contract
-            </DialogDescription>
-          </DialogHeader>
-          {selectedContract && selectedMethod && (
-            <TransactionBuilder
-              contract={selectedContract}
-              method={selectedMethod}
-              args={executeArgs}
-              onArgsChange={setExecuteArgs}
-              onExecute={executeMethod}
-              isExecuting={isDeploying}
-              wallet={wallet}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={deployStatus !== null} onOpenChange={(open) => !open && setDeployStatus(null)}>
         <DialogContent className="sm:max-w-md">

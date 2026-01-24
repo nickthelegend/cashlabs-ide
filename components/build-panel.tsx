@@ -43,15 +43,20 @@ export function BuildPanel({
 }: BuildPanelProps) {
   const [activeTab, setActiveTab] = useState<"output" | "artifacts">("output")
 
-  const hasErrors = buildOutput.some(line =>
-    line.toLowerCase().includes('error') ||
-    line.toLowerCase().includes('failed')
-  )
+  const hasErrors = buildOutput.some(line => {
+    const lowerLine = line.toLowerCase();
+    // Check for error/failed but exclude "0 errors" or "0 failed"
+    return (lowerLine.includes('error') || lowerLine.includes('failed')) &&
+      !lowerLine.includes('0 error') &&
+      !lowerLine.includes('0 failed');
+  });
 
-  const hasWarnings = buildOutput.some(line =>
-    line.toLowerCase().includes('warning') ||
-    line.toLowerCase().includes('warn')
-  )
+  const hasWarnings = buildOutput.some(line => {
+    const lowerLine = line.toLowerCase();
+    return (lowerLine.includes('warning') || lowerLine.includes('warn')) &&
+      !lowerLine.includes('0 warning') &&
+      !lowerLine.includes('0 warn');
+  });
 
   return (
     <div className="h-full flex flex-col bg-[#1e1e1e] text-white">
@@ -198,7 +203,7 @@ export function BuildPanel({
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {activeTab === "output" ? (
-          <div id="terminal-output-container" className="h-full overflow-y-auto">
+          <ScrollArea className="h-full" id="terminal-output-container">
             <div className="p-3">
               {buildOutput.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
@@ -211,24 +216,30 @@ export function BuildPanel({
                   {buildOutput.map((line, index) => (
                     <div
                       key={index}
-                      className={`text-xs font-mono p-1 rounded whitespace-pre-wrap break-all ${line.toLowerCase().includes('error') || line.toLowerCase().includes('failed') || line.includes('❌')
-                        ? "text-red-400 bg-red-900/20"
-                        : line.toLowerCase().includes('warning') || line.toLowerCase().includes('warn')
-                          ? "text-yellow-400 bg-yellow-900/20"
-                          : line.toLowerCase().includes('success') || line.includes('✅') || line.includes('🎉')
-                            ? "text-green-400 bg-green-900/20"
-                            : line.includes('📄') || line.includes('📁') || line.includes('🔨')
-                              ? "text-blue-400"
-                              : "text-gray-300"
+                      className={`text-xs font-mono p-1 rounded whitespace-pre-wrap break-all ${(line.toLowerCase().includes('success') || line.includes('✅') || (line.toLowerCase().includes('0 error') && line.toLowerCase().includes('success')))
+                          ? "text-green-400 bg-green-900/20"
+                          : (line.toLowerCase().includes('error') || line.toLowerCase().includes('failed') || line.includes('❌'))
+                            ? "text-red-400 bg-red-900/20"
+                            : (line.toLowerCase().includes('warning') || line.toLowerCase().includes('warn'))
+                              ? "text-yellow-400 bg-yellow-900/20"
+                              : line.includes('📄') || line.includes('📁') || line.includes('🔨') || line.includes('🚀')
+                                ? "text-blue-400"
+                                : "text-gray-300"
                         }`}
                     >
                       {line}
                     </div>
                   ))}
+                  {/* Invisible element for auto-scrolling */}
+                  <div ref={(el) => {
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }
+                  }} />
                 </div>
               )}
             </div>
-          </div>
+          </ScrollArea>
         ) : (
           <ScrollArea className="h-full">
             <div className="p-3">
