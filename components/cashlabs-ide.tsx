@@ -384,6 +384,22 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
 
   const createFile = async (filePath: string) => {
     setFileContents((prev) => ({ ...prev, [filePath]: "" }));
+
+    // Update tree structure
+    setCurrentFiles((prev: any) => {
+      const newTree = JSON.parse(JSON.stringify(prev));
+      const parts = filePath.split('/');
+      const fileName = parts.pop()!;
+      let current = newTree;
+
+      for (const part of parts) {
+        if (!current[part]) current[part] = { directory: {} };
+        current = current[part].directory;
+      }
+      current[fileName] = { file: { contents: "" } };
+      return newTree;
+    });
+
     setOpenFiles((prev) => [...prev, filePath]);
     setActiveFile(filePath);
   };
@@ -396,6 +412,37 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       delete updated[oldPath];
       return updated;
     });
+
+    // Update tree structure
+    setCurrentFiles((prev: any) => {
+      const newTree = JSON.parse(JSON.stringify(prev));
+
+      // Remove old
+      const oldParts = oldPath.split('/');
+      const oldFileName = oldParts.pop()!;
+      let current = newTree;
+      for (const part of oldParts) {
+        if (current[part] && current[part].directory) {
+          current = current[part].directory;
+        }
+      }
+      const fileData = current[oldFileName];
+      delete current[oldFileName];
+
+      // Add new
+      const newParts = newPath.split('/');
+      const newFileName = newParts.pop()!;
+      let newCurrent = newTree;
+      for (const part of newParts) {
+        if (!newCurrent[part]) newCurrent[part] = { directory: {} };
+        if (!newCurrent[part].directory) newCurrent[part].directory = {};
+        newCurrent = newCurrent[part].directory;
+      }
+      newCurrent[newFileName] = fileData;
+
+      return newTree;
+    });
+
     setOpenFiles((prev) => prev.map((p) => (p === oldPath ? newPath : p)));
     if (activeFile === oldPath) {
       setActiveFile(newPath);
@@ -408,6 +455,22 @@ export default function CashLabsIDE({ initialFiles, selectedTemplate, selectedTe
       delete updated[filePath];
       return updated;
     });
+
+    // Update tree structure
+    setCurrentFiles((prev: any) => {
+      const newTree = JSON.parse(JSON.stringify(prev));
+      const parts = filePath.split('/');
+      const fileName = parts.pop()!;
+      let current = newTree;
+      for (const part of parts) {
+        if (current[part] && current[part].directory) {
+          current = current[part].directory;
+        }
+      }
+      delete current[fileName];
+      return newTree;
+    });
+
     closeFile(filePath);
   };
 

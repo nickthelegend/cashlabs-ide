@@ -19,6 +19,7 @@ import {
   MessageSquare,
   Wrench,
   Loader2,
+  Pencil,
 } from "lucide-react"
 import FileTree from "@/components/file-tree"
 import { cn } from "@/lib/utils"
@@ -36,6 +37,8 @@ interface SidebarProps {
   isWebContainerReady: boolean
   fileStructure: any
   onArtifactFileSelect: (filePath: string) => void
+  renamingPath?: string | null
+  onRenamingPathChange?: (path: string | null) => void
   deployedContracts?: any[]
   onContractSelect?: (contract: any) => void
   onBuild?: () => void
@@ -75,6 +78,7 @@ export function Sidebar({
   const [expandedArtifactsFolders, setExpandedArtifactsFolders] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null)
   const [showCreateDialog, setShowCreateDialog] = useState<{ type: "file" | "folder"; path: string } | null>(null)
+  const [renamingPath, setRenamingPath] = useState<string | null>(null)
   const [newItemName, setNewItemName] = useState("")
 
   const toggleFolder = (path: string) => {
@@ -242,6 +246,10 @@ export function Sidebar({
                 fileStructure={fileStructureProp}
                 activeFile={activeFile}
                 onFileSelect={onFileSelect}
+                onContextMenu={handleContextMenu}
+                onRename={onRenameFile}
+                renamingPath={renamingPath}
+                onRenamingPathChange={setRenamingPath}
               />
             </div>
           )}
@@ -355,27 +363,21 @@ export function Sidebar({
             New Folder
           </button>
           <button
-            onClick={() => deleteItem(contextMenu.path)}
-            className="w-full text-left px-3 py-1 hover:bg-[#37373d] text-sm flex items-center gap-2 text-red-400"
-            disabled={!isWebContainerReady}
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete
-          </button>
-          <button
             onClick={() => {
-              const newName = prompt(`Enter new name for ${contextMenu.path}`)
-              if (newName) {
-                const newPath = contextMenu.path.split("/").slice(0, -1).join("/") + "/" + newName
-                onRenameFile(contextMenu.path, newPath)
-              }
+              setRenamingPath(contextMenu.path)
               setContextMenu(null)
             }}
             className="w-full text-left px-3 py-1 hover:bg-[#37373d] text-sm flex items-center gap-2"
-            disabled={!isWebContainerReady}
           >
-            <FilePlus className="w-4 h-4" />
+            <Pencil className="w-4 h-4" />
             Rename
+          </button>
+          <button
+            onClick={() => deleteItem(contextMenu.path)}
+            className="w-full text-left px-3 py-1 hover:bg-[#37373d] text-sm flex items-center gap-2 text-red-400"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete
           </button>
         </div>
       )}
